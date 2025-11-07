@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdint>
+#include <bitset>
 
 class Registers {
 public:
@@ -26,6 +27,20 @@ public:
     bool getFlag(Flag flag) const { return (f & flag) != 0; }
     void setFlag(Flag flag, bool value) { value ? f |= flag : f &= ~flag; }
     void clearFlags() { f = 0; }
+
+    void showRegisters() {
+        std::bitset<8> ba(a);
+        std::bitset<8> bf(f);
+        std::bitset<8> bb(b);
+        std::bitset<8> bc(c);
+        std::bitset<8> bd(d);
+        std::bitset<8> be(e);
+        std::bitset<8> bh(h);
+        std::bitset<8> bl(l);
+
+        std::cout << "|     A    |     F    |     B    |     C    |     D    |     E    |     H    |     L    |" << std::endl;
+        std::cout << "| " << ba << " | " << bf << " | " << bb << " | " << bc << " | " << bd << " | " << be << " | " << bh << " | " << bl << " |" << std::endl;
+    }
 };
 
 enum Reg8 {
@@ -61,7 +76,7 @@ public:
         return 0;
     }
 
-    void readReg8(Reg8 reg, uint8_t value) {
+    void writeReg8(Reg8 reg, uint8_t value) {
         switch (reg) {
             case REG_B: regs.b = value; break;
             case REG_C: regs.c = value; break;
@@ -86,14 +101,24 @@ public:
 
 private:
     Instruction instructions[256];
-    void initializeInstructions();
+
+    void initializeInstructions() { 
+        instructions[0x00] = &CPU::NOP; 
+        instructions[0x41] = &CPU::LD_B_C;
+    }
 
     void NOP();
+    void LD_r_r(Reg8 dest, Reg8 src);
+    void LD_B_C();
 };
 
-void CPU::initializeInstructions() { instructions[0x00] = &CPU::NOP; }
-
 void CPU::NOP() { std::cout << "NOP OP" << std::endl; }
+void CPU::LD_r_r(Reg8 dest, Reg8 src) {
+    uint8_t value = readReg8(src);
+    writeReg8(dest, value);
+}
+
+void CPU::LD_B_C() { LD_r_r(Reg8::REG_B, Reg8::REG_C); }
 
 
 //--------------------------------------------------------------------------------------------------------------------------//
@@ -101,12 +126,11 @@ void CPU::NOP() { std::cout << "NOP OP" << std::endl; }
 
 int main(int argc, char **argv) {
     CPU cpu = CPU();
-    cpu.execute();
-    cpu.execute();
-    cpu.execute();
-    cpu.execute();
-    cpu.execute();
-    cpu.execute();
 
-    std::cout << cpu.regs.pc << std::endl;
+    cpu.regs.c = 11;
+
+    cpu.regs.showRegisters();
+    cpu.memory[0] = 0x41;
+    cpu.execute();
+    cpu.regs.showRegisters();
 }
