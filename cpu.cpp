@@ -28,6 +28,17 @@ public:
     void clearFlags() { f = 0; }
 };
 
+enum Reg8 {
+    REG_B = 0,
+    REG_C,
+    REG_D,
+    REG_E,
+    REG_H,
+    REG_L,
+    REG_HL_MEM,
+    REG_A
+};
+
 class CPU {
 public:
     CPU() { initializeInstructions(); }
@@ -36,10 +47,35 @@ public:
     using Instruction = void (CPU::*)();
     uint8_t memory[65536] = {0};
 
+    uint8_t readReg8(Reg8 reg) {
+        switch (reg) {
+            case REG_B: return regs.b;
+            case REG_C: return regs.c;
+            case REG_D: return regs.d;
+            case REG_E: return regs.e;
+            case REG_H: return regs.h;
+            case REG_L: return regs.l;
+            case REG_A: return regs.a;
+            case REG_HL_MEM: return memory[regs.getHL()];
+        }
+        return 0;
+    }
+
+    void readReg8(Reg8 reg, uint8_t value) {
+        switch (reg) {
+            case REG_B: regs.b = value; break;
+            case REG_C: regs.c = value; break;
+            case REG_D: regs.d = value; break;
+            case REG_E: regs.e = value; break;
+            case REG_H: regs.h = value; break;
+            case REG_L: regs.l = value; break;
+            case REG_A: regs.a = value; break;
+            case REG_HL_MEM: memory[regs.getHL()] = value; break;
+        }
+    }
+
     uint8_t fetch() {
-        uint8_t byte = memory[regs.pc];
-        regs.pc++;
-        return byte;
+        return memory[regs.pc++];
     }
 
     void execute() {
@@ -58,6 +94,10 @@ private:
 void CPU::initializeInstructions() { instructions[0x00] = &CPU::NOP; }
 
 void CPU::NOP() { std::cout << "NOP OP" << std::endl; }
+
+
+//--------------------------------------------------------------------------------------------------------------------------//
+
 
 int main(int argc, char **argv) {
     CPU cpu = CPU();
