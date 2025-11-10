@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
+#include <array>
 
 class Registers {
 public:
@@ -95,8 +96,18 @@ public:
 
     void execute() {
         uint8_t opcode = fetch();
-        Instruction inst = instructions[opcode];
-        (this->*inst)();
+
+        switch(opcode) {
+            case 0x00: return NOP();
+            case 0x76: return HALT();
+        }
+
+        // LD r8 r8
+        if(( opcode & 0b11000000 ) == 0b01000000) {
+            uint8_t dest = (opcode >> 3) & 0b111;
+            uint8_t src = opcode & 0b111;
+            LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
+        }
     }
 
 private:
@@ -104,21 +115,21 @@ private:
 
     void initializeInstructions() { 
         instructions[0x00] = &CPU::NOP; 
-        instructions[0x41] = &CPU::LD_B_C;
+        instructions[0x76] = &CPU::HALT;
     }
 
     void NOP();
+    void HALT();
     void LD_r_r(Reg8 dest, Reg8 src);
-    void LD_B_C();
+
 };
 
 void CPU::NOP() { std::cout << "NOP OP" << std::endl; }
+void CPU::HALT() { return; }
 void CPU::LD_r_r(Reg8 dest, Reg8 src) {
     uint8_t value = readReg8(src);
     writeReg8(dest, value);
 }
-
-void CPU::LD_B_C() { LD_r_r(Reg8::REG_B, Reg8::REG_C); }
 
 
 //--------------------------------------------------------------------------------------------------------------------------//
@@ -131,6 +142,9 @@ int main(int argc, char **argv) {
 
     cpu.regs.showRegisters();
     cpu.memory[0] = 0x41;
+    cpu.memory[1] = 0x60;
+    cpu.execute();
+    cpu.regs.showRegisters();
     cpu.execute();
     cpu.regs.showRegisters();
 }
