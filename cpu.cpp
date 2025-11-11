@@ -117,25 +117,46 @@ public:
             LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
         }
 
+        else if(opcode  == 0b00110110) {
+            LD_r8_n(REG_HL_MEM);
+        }
+
         else if((opcode & 0b11000111) == 0b00000110) {
             uint8_t dest = (opcode >> 3) & 0b111;
             LD_r8_n(static_cast<Reg8>(dest));
         }
 
     }
-    void execute_next() {
+    void executeNext() {
         uint8_t opcode = fetch();
         execute(opcode);
     }
 
-    void run_till_nop(bool showRegisters = true) {
+    void showMemory(uint16_t window = 5) {
+        uint16_t min = regs.pc < window ? 0 : regs.pc - window;
+        uint16_t max = regs.pc + window > 0xFF ? 0xFF : regs.pc + window;
+
+        for(int i = min; i < max; i++) {
+            std::bitset<8> value(memory[i]);
+            if(i == regs.pc) {
+                std::cout << "| pc | " << value << " |" << std::endl;
+            } else {
+                std::cout << "|    | " << value << " |" << std::endl;
+            }
+        }
+        std::cout << std::endl;
+    }
+
+    void runTillNOP(bool showRegisters = true, bool showMem=true) {
         uint8_t opcode = fetch();
         while(opcode) {
             execute(opcode);
             if(showRegisters) regs.showRegisters();
+            if(showMem) showMemory();
             opcode = fetch();
         }
     }
+
 
 private:
     //--- Misc/Control instructions ---//
@@ -168,6 +189,11 @@ private:
         writeReg8(REG_HL_MEM, value);
     }
 
+    void LD_hl_n() {
+        uint8_t value = fetch();
+        writeReg8(REG_HL_MEM, value);
+    }
+
 };
 
 
@@ -180,11 +206,14 @@ int main(int argc, char **argv) {
     CPU cpu = CPU();
 
     cpu.regs.b = 7;
-    cpu.regs.setHL(2);
+    cpu.regs.setHL(4);
+
+    cpu.memory[0x00] = 0x36;
+    cpu.memory[0x01] = 0xF0;
+
+
     cpu.regs.showRegisters();
+    cpu.showMemory();
 
-    cpu.memory[0x00] = 0x70;
-    cpu.memory[0x01] = 0x0E;
-
-    cpu.run_till_nop();
+    cpu.runTillNOP();
 }
