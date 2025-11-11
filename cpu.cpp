@@ -157,9 +157,7 @@ public:
             LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
         }
 
-        else if(opcode  == 0b00110110) {
-            LD_hl_n();
-        }
+        else if(opcode  == 0b00110110) { LD_hl_n(); }
 
         else if((opcode & 0b11000111) == 0b00000110) {
             uint8_t dest = (opcode >> 3) & 0b111;
@@ -172,6 +170,10 @@ public:
         else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
         else if(opcode == 0b11111010) { LD_a_nn(); }
         else if(opcode == 0b11101010) { LD_nn_a(); }
+        else if(opcode == 0b11110010) { LDH_a_c(); }
+        else if(opcode == 0b11100010) { LDH_c_a(); }
+        else if(opcode == 0b11110000) { LDH_a_n(); }
+        else if(opcode == 0b11100000) { LDH_n_a(); }
 
     }
     void executeNext() {
@@ -181,7 +183,7 @@ public:
 
     void showMemory(uint16_t window = 5) {
         uint16_t min = regs.pc < window ? 0 : regs.pc - window;
-        uint16_t max = regs.pc + window > 0xFF ? 0xFF : regs.pc + window;
+        uint16_t max = regs.pc + window > 0xFFFF ? 0xFFFF : regs.pc + window;
 
         for(int i = min; i < max; i++) {
             std::bitset<8> value(memory[i]);
@@ -268,6 +270,30 @@ private:
         uint8_t value = readReg8(REG_A);
         memory[addr] = value;
     }
+    
+    void LDH_a_c() {
+        uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+        uint8_t value = memory[addr];
+        writeReg8(REG_A, value);
+    }
+
+    void LDH_c_a() {
+        uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+        uint8_t value = readReg8(REG_A);
+        memory[addr] = value;
+    }
+
+    void LDH_a_n(){
+        uint16_t addr = (0xFF << 8 | fetch());
+        uint8_t value = memory[addr];
+        writeReg8(REG_A, value);
+    }
+
+    void LDH_n_a(){
+        uint16_t addr = (0xFF << 8 | fetch());
+        uint8_t value = readReg8(REG_A);
+        memory[addr] = value;
+    }
 };
 
 
@@ -279,14 +305,11 @@ private:
 int main(int argc, char **argv) {
     CPU cpu = CPU();
 
-    cpu.regs.setBC(0x03);
-    cpu.regs.setDE(0x03);
     cpu.regs.a = 0xF0;
+    cpu.regs.pc = 0xFF00;
 
-    cpu.memory[0x00] = 0xEA;
-    cpu.memory[0x02] = 0x00;
-    cpu.memory[0x01] = 0x04;
-    cpu.memory[0x04] = 0x00;
+    cpu.memory[0xFF00] = 0xE0;
+    cpu.memory[0xFF01] = 0x03;
 
     cpu.regs.showRegisters();
     cpu.showMemory();
