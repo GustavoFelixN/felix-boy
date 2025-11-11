@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
-#include <array>
 
 class Registers {
 public:
@@ -57,10 +56,7 @@ enum Reg8 {
 
 class CPU {
 public:
-    CPU() { initializeInstructions(); }
-
     Registers regs;
-    using Instruction = void (CPU::*)();
     uint8_t memory[65536] = {0};
 
     uint8_t readReg8(Reg8 reg) {
@@ -94,12 +90,14 @@ public:
         return memory[regs.pc++];
     }
 
-    void execute() {
-        uint8_t opcode = fetch();
-
+    void execute(uint8_t opcode) {
         switch(opcode) {
             case 0x00: return NOP();
+            case 0x10: return STOP();
             case 0x76: return HALT();
+            case 0xCB: return PREFIX();
+            case 0xF3: return DI();
+            case 0xFB: return EI();
         }
 
         // LD r8 r8
@@ -108,28 +106,50 @@ public:
             uint8_t src = opcode & 0b111;
             LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
         }
+
+        if((opcode & 0b11000111) == 0b00000110) {
+            uint8_t dest = (opcode >> 3) & 0b111;
+            LD_r8_n(static_cast<Reg8>(dest));
+        }
+    }
+    void execute_next() {
+        uint8_t opcode = fetch();
+        execute(opcode);
+    }
+
+    void run_till_nop(bool showRegisters = true) {
+        uint8_t opcode = fetch();
+        while(opcode) {
+            execute(opcode);
+            if(showRegisters) regs.showRegisters();
+            opcode = fetch();
+        }
     }
 
 private:
-    Instruction instructions[256];
+    //--- Misc/Control instructions ---//
+    void NOP() { std::cout << "NOP OP" << std::endl; }
+    void STOP() {  std::cout << "STOP OP" << std::endl;  }
+    void HALT() {  std::cout << "HALT OP" << std::endl;  }
+    void PREFIX() {  std::cout << "PREFIX OP" << std::endl;  }
+    void DI() {  std::cout << "DI OP" << std::endl;  }
+    void EI() {  std::cout << "EI OP" << std::endl;  }
 
-    void initializeInstructions() { 
-        instructions[0x00] = &CPU::NOP; 
-        instructions[0x76] = &CPU::HALT;
+
+    //--- Load instructions ---//
+    void LD_r_r(Reg8 dest, Reg8 src) {
+        uint8_t value = readReg8(src);
+        writeReg8(dest, value);
     }
 
-    void NOP();
-    void HALT();
-    void LD_r_r(Reg8 dest, Reg8 src);
+    void LD_r8_n(Reg8 dest) {
+        uint8_t imm = fetch();
+        writeReg8(dest, imm);
+    }
 
 };
 
-void CPU::NOP() { std::cout << "NOP OP" << std::endl; }
-void CPU::HALT() { return; }
-void CPU::LD_r_r(Reg8 dest, Reg8 src) {
-    uint8_t value = readReg8(src);
-    writeReg8(dest, value);
-}
+
 
 
 //--------------------------------------------------------------------------------------------------------------------------//
@@ -143,8 +163,10 @@ int main(int argc, char **argv) {
     cpu.regs.showRegisters();
     cpu.memory[0] = 0x41;
     cpu.memory[1] = 0x60;
-    cpu.execute();
-    cpu.regs.showRegisters();
-    cpu.execute();
-    cpu.regs.showRegisters();
+    cpu.memory[2] = 0x06;
+    cpu.memory[3] = 0xFF;
+    cpu.memory[4] = 0x16;
+    cpu.memory[5] = 0xF0;
+
+    cpu.run_till_nop();
 }
