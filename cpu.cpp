@@ -123,6 +123,13 @@ public:
         return memory[regs.pc++];
     }
 
+    uint16_t fetch16() {
+        uint8_t lsb = fetch();
+        uint8_t msb = fetch();
+        return (msb << 8) | lsb;
+
+    }
+
     void execute(uint8_t opcode) {
         switch(opcode) {
             case 0x00: return NOP();
@@ -159,21 +166,12 @@ public:
             LD_r8_n(static_cast<Reg8>(dest));
         }
 
-        else if(opcode == 0b00001010) {
-            LD_a_mem(REG_BC);
-        }
-
-        else if(opcode == 0b00011010) {
-            LD_a_mem(REG_DE);
-        }
-
-        else if(opcode == 0b00000010) {
-            LD_mem_a(REG_BC);
-        }
-
-        else if(opcode == 0b00010010) {
-            LD_mem_a(REG_BC);
-        }
+        else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
+        else if(opcode == 0b00011010) { LD_a_mem(REG_DE); }
+        else if(opcode == 0b00000010) { LD_mem_a(REG_BC); }
+        else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
+        else if(opcode == 0b11111010) { LD_a_nn(); }
+        else if(opcode == 0b11101010) { LD_nn_a(); }
 
     }
     void executeNext() {
@@ -259,6 +257,17 @@ private:
         memory[addr] = value;
     }
 
+    void LD_a_nn() {
+        uint16_t addr = fetch16();
+        uint8_t value = memory[addr];
+        writeReg8(REG_A, value);
+    }
+
+    void LD_nn_a() {
+        uint16_t addr = fetch16();
+        uint8_t value = readReg8(REG_A);
+        memory[addr] = value;
+    }
 };
 
 
@@ -274,7 +283,10 @@ int main(int argc, char **argv) {
     cpu.regs.setDE(0x03);
     cpu.regs.a = 0xF0;
 
-    cpu.memory[0x00] = 0x12;
+    cpu.memory[0x00] = 0xEA;
+    cpu.memory[0x02] = 0x00;
+    cpu.memory[0x01] = 0x04;
+    cpu.memory[0x04] = 0x00;
 
     cpu.regs.showRegisters();
     cpu.showMemory();
