@@ -167,6 +167,14 @@ public:
             LD_a_mem(REG_DE);
         }
 
+        else if(opcode == 0b00000010) {
+            LD_mem_a(REG_BC);
+        }
+
+        else if(opcode == 0b00010010) {
+            LD_mem_a(REG_BC);
+        }
+
     }
     void executeNext() {
         uint8_t opcode = fetch();
@@ -245,6 +253,12 @@ private:
         writeReg8(REG_A, value);
     }
 
+    void LD_mem_a(Reg16 dest) {
+        uint16_t addr = readReg16(dest);
+        uint8_t value = readReg8(REG_A);
+        memory[addr] = value;
+    }
+
 };
 
 
@@ -256,12 +270,11 @@ private:
 int main(int argc, char **argv) {
     CPU cpu = CPU();
 
-
+    cpu.regs.setBC(0x03);
     cpu.regs.setDE(0x03);
-    cpu.memory[0x00] = 0x1A;
-    cpu.memory[0x03] = 0xF0;
+    cpu.regs.a = 0xF0;
 
-
+    cpu.memory[0x00] = 0x12;
 
     cpu.regs.showRegisters();
     cpu.showMemory();
