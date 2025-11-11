@@ -102,20 +102,22 @@ public:
 
         // Checking immediate before r r for queuing operations in the future
         if ((opcode & 0b11000111) == 0b01000110) {
-            std::cout << "aqui 1" << std::endl;
             uint8_t dest = (opcode >> 3) & 0b111;
             LD_r8_hl(static_cast<Reg8>(dest));
         }
 
+        else if((opcode & 0b11111000) == 0b01110000) {
+            uint8_t src = (opcode) & 0b111;
+            LD_hl_r8(static_cast<Reg8>(src));
+        }
+
         else if(( opcode & 0b11000000 ) == 0b01000000) {
-            std::cout << "aqui 2" << std::endl;
             uint8_t dest = (opcode >> 3) & 0b111;
             uint8_t src = opcode & 0b111;
             LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
         }
 
         else if((opcode & 0b11000111) == 0b00000110) {
-            std::cout << "aqui" << std::endl;
             uint8_t dest = (opcode >> 3) & 0b111;
             LD_r8_n(static_cast<Reg8>(dest));
         }
@@ -161,6 +163,11 @@ private:
         writeReg8(dest, imm);
     }
 
+    void LD_hl_r8(Reg8 src) {
+        uint8_t value = readReg8(src);
+        writeReg8(REG_HL_MEM, value);
+    }
+
 };
 
 
@@ -172,14 +179,12 @@ private:
 int main(int argc, char **argv) {
     CPU cpu = CPU();
 
-    cpu.regs.setHL(7);
+    cpu.regs.b = 7;
+    cpu.regs.setHL(2);
     cpu.regs.showRegisters();
 
-    cpu.memory[0x00] = 0x46;
-    cpu.memory[0x01] = 0x50;
-    cpu.memory[0x02] = 0x1E;
-    cpu.memory[0x03] = 0xF0;
-    cpu.memory[0x07] = 0xFF;
+    cpu.memory[0x00] = 0x70;
+    cpu.memory[0x01] = 0x0E;
 
     cpu.run_till_nop();
 }
