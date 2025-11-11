@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
+#include <iomanip>
 
 class Registers {
 public:
@@ -118,7 +119,7 @@ public:
         }
 
         else if(opcode  == 0b00110110) {
-            LD_r8_n(REG_HL_MEM);
+            LD_hl_n();
         }
 
         else if((opcode & 0b11000111) == 0b00000110) {
@@ -141,7 +142,7 @@ public:
             if(i == regs.pc) {
                 std::cout << "| pc | " << value << " |" << std::endl;
             } else {
-                std::cout << "|    | " << value << " |" << std::endl;
+                std::cout << "|" << std::showbase << std::internal << std::uppercase << std::hex << std::setw(4) << std::setfill('0')  << i << "| " << value << " |" << std::endl;
             }
         }
         std::cout << std::endl;
