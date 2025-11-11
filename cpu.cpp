@@ -55,6 +55,15 @@ enum Reg8 {
     REG_A
 };
 
+enum Reg16 {
+    REG_BC = 0,
+    REG_DE,
+    REG_HL,
+    REG_AF,
+    REG_SP,
+    REG_PC
+};
+
 class CPU {
 public:
     Registers regs;
@@ -84,6 +93,29 @@ public:
             case REG_L: regs.l = value; break;
             case REG_A: regs.a = value; break;
             case REG_HL_MEM: memory[regs.getHL()] = value; break;
+        }
+    }
+
+    uint16_t readReg16(Reg16 reg) {
+        switch (reg) {
+            case REG_BC: return regs.getBC();
+            case REG_DE: return regs.getDE();
+            case REG_HL: return regs.getHL();
+            case REG_AF: return regs.getAF();
+            case REG_SP: return regs.sp;
+            case REG_PC: return regs.pc;
+        }
+        return 0;
+    }
+
+    void writeReg16(Reg16 reg, uint16_t value) {
+        switch (reg) {
+            case REG_BC: regs.setBC(value); break;
+            case REG_DE: regs.setDE(value); break;
+            case REG_HL: regs.setHL(value); break;
+            case REG_AF: regs.setAF(value); break;
+            case REG_SP: regs.sp = value; break;
+            case REG_PC: regs.pc = value; break;
         }
     }
 
@@ -127,6 +159,14 @@ public:
             LD_r8_n(static_cast<Reg8>(dest));
         }
 
+        else if(opcode == 0b00001010) {
+            LD_a_mem(REG_BC);
+        }
+
+        else if(opcode == 0b00011010) {
+            LD_a_mem(REG_DE);
+        }
+
     }
     void executeNext() {
         uint8_t opcode = fetch();
@@ -142,7 +182,11 @@ public:
             if(i == regs.pc) {
                 std::cout << "| pc | " << value << " |" << std::endl;
             } else {
-                std::cout << "|" << std::showbase << std::internal << std::uppercase << std::hex << std::setw(4) << std::setfill('0')  << i << "| " << value << " |" << std::endl;
+                std::cout << "|" 
+                << std::showbase << std::internal 
+                << std::uppercase << std::hex 
+                << std::setw(4) << std::setfill('0')  << i 
+                << "| " << value << " |" << std::endl;
             }
         }
         std::cout << std::endl;
@@ -195,6 +239,12 @@ private:
         writeReg8(REG_HL_MEM, value);
     }
 
+    void LD_a_mem(Reg16 src) {
+        uint16_t addr = readReg16(src);
+        uint8_t value = memory[addr];
+        writeReg8(REG_A, value);
+    }
+
 };
 
 
@@ -206,11 +256,11 @@ private:
 int main(int argc, char **argv) {
     CPU cpu = CPU();
 
-    cpu.regs.b = 7;
-    cpu.regs.setHL(4);
 
-    cpu.memory[0x00] = 0x36;
-    cpu.memory[0x01] = 0xF0;
+    cpu.regs.setDE(0x03);
+    cpu.memory[0x00] = 0x1A;
+    cpu.memory[0x03] = 0xF0;
+
 
 
     cpu.regs.showRegisters();
