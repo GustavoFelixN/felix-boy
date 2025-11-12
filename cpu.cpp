@@ -1,318 +1,257 @@
-#include <iostream>
-#include <cstdint>
-#include <bitset>
-#include <iomanip>
+#include "cpu.h"
 
-class Registers {
-public:
-    uint8_t a, f, b, c, d, e, h, l;
-    uint16_t sp, pc;
-
-    enum Flag : uint8_t {
-        Z = 1 << 7,
-        N = 1 << 6,
-        H = 1 << 5,
-        C = 1 << 4,
-    };
-
-    uint16_t getAF() const { return (a << 8) | f; }
-    uint16_t getBC() const { return (b << 8) | c; }
-    uint16_t getDE() const { return (d << 8) | e; }
-    uint16_t getHL() const { return (h << 8) | l; }
-
-    void setAF(uint16_t val) { a = val >> 8; f = val & 0xF0; }
-    void setBC(uint16_t val) { b = val >> 8; c = val & 0xFF; }
-    void setDE(uint16_t val) { d = val >> 8; e = val & 0xFF; }
-    void setHL(uint16_t val) { h = val >> 8; l = val & 0xFF; }
-
-    bool getFlag(Flag flag) const { return (f & flag) != 0; }
-    void setFlag(Flag flag, bool value) { value ? f |= flag : f &= ~flag; }
-    void clearFlags() { f = 0; }
-
-    void showRegisters() {
-        std::bitset<8> ba(a);
-        std::bitset<8> bf(f);
-        std::bitset<8> bb(b);
-        std::bitset<8> bc(c);
-        std::bitset<8> bd(d);
-        std::bitset<8> be(e);
-        std::bitset<8> bh(h);
-        std::bitset<8> bl(l);
-
-        std::cout << "|     A    |     F    |     B    |     C    |     D    |     E    |     H    |     L    |" << std::endl;
-        std::cout << "| " << ba << " | " << bf << " | " << bb << " | " << bc << " | " << bd << " | " << be << " | " << bh << " | " << bl << " |" << std::endl;
+uint8_t CPU::readReg8(Reg8 reg) {
+    switch (reg) {
+        case REG_B: return regs.b;
+        case REG_C: return regs.c;
+        case REG_D: return regs.d;
+        case REG_E: return regs.e;
+        case REG_H: return regs.h;
+        case REG_L: return regs.l;
+        case REG_A: return regs.a;
+        case REG_HL_MEM: return memory[regs.getHL()];
     }
-};
-
-enum Reg8 {
-    REG_B = 0,
-    REG_C,
-    REG_D,
-    REG_E,
-    REG_H,
-    REG_L,
-    REG_HL_MEM,
-    REG_A
-};
-
-enum Reg16 {
-    REG_BC = 0,
-    REG_DE,
-    REG_HL,
-    REG_AF,
-    REG_SP,
-    REG_PC
-};
-
-class CPU {
-public:
-    Registers regs;
-    uint8_t memory[65536] = {0};
-
-    uint8_t readReg8(Reg8 reg) {
-        switch (reg) {
-            case REG_B: return regs.b;
-            case REG_C: return regs.c;
-            case REG_D: return regs.d;
-            case REG_E: return regs.e;
-            case REG_H: return regs.h;
-            case REG_L: return regs.l;
-            case REG_A: return regs.a;
-            case REG_HL_MEM: return memory[regs.getHL()];
-        }
-        return 0;
-    }
-
-    void writeReg8(Reg8 reg, uint8_t value) {
-        switch (reg) {
-            case REG_B: regs.b = value; break;
-            case REG_C: regs.c = value; break;
-            case REG_D: regs.d = value; break;
-            case REG_E: regs.e = value; break;
-            case REG_H: regs.h = value; break;
-            case REG_L: regs.l = value; break;
-            case REG_A: regs.a = value; break;
-            case REG_HL_MEM: memory[regs.getHL()] = value; break;
-        }
-    }
-
-    uint16_t readReg16(Reg16 reg) {
-        switch (reg) {
-            case REG_BC: return regs.getBC();
-            case REG_DE: return regs.getDE();
-            case REG_HL: return regs.getHL();
-            case REG_AF: return regs.getAF();
-            case REG_SP: return regs.sp;
-            case REG_PC: return regs.pc;
-        }
-        return 0;
-    }
-
-    void writeReg16(Reg16 reg, uint16_t value) {
-        switch (reg) {
-            case REG_BC: regs.setBC(value); break;
-            case REG_DE: regs.setDE(value); break;
-            case REG_HL: regs.setHL(value); break;
-            case REG_AF: regs.setAF(value); break;
-            case REG_SP: regs.sp = value; break;
-            case REG_PC: regs.pc = value; break;
-        }
-    }
-
-    uint8_t fetch() {
-        return memory[regs.pc++];
-    }
-
-    uint16_t fetch16() {
-        uint8_t lsb = fetch();
-        uint8_t msb = fetch();
-        return (msb << 8) | lsb;
-
-    }
-
-    void execute(uint8_t opcode) {
-        switch(opcode) {
-            case 0x00: return NOP();
-            case 0x10: return STOP();
-            case 0x76: return HALT();
-            case 0xCB: return PREFIX();
-            case 0xF3: return DI();
-            case 0xFB: return EI();
-        }
-
-        // Checking immediate before r r for queuing operations in the future
-        if ((opcode & 0b11000111) == 0b01000110) {
-            uint8_t dest = (opcode >> 3) & 0b111;
-            LD_r8_hl(static_cast<Reg8>(dest));
-        }
-
-        else if((opcode & 0b11111000) == 0b01110000) {
-            uint8_t src = (opcode) & 0b111;
-            LD_hl_r8(static_cast<Reg8>(src));
-        }
-
-        else if(( opcode & 0b11000000 ) == 0b01000000) {
-            uint8_t dest = (opcode >> 3) & 0b111;
-            uint8_t src = opcode & 0b111;
-            LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
-        }
-
-        else if(opcode  == 0b00110110) { LD_hl_n(); }
-
-        else if((opcode & 0b11000111) == 0b00000110) {
-            uint8_t dest = (opcode >> 3) & 0b111;
-            LD_r8_n(static_cast<Reg8>(dest));
-        }
-
-        else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
-        else if(opcode == 0b00011010) { LD_a_mem(REG_DE); }
-        else if(opcode == 0b00000010) { LD_mem_a(REG_BC); }
-        else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
-        else if(opcode == 0b11111010) { LD_a_nn(); }
-        else if(opcode == 0b11101010) { LD_nn_a(); }
-        else if(opcode == 0b11110010) { LDH_a_c(); }
-        else if(opcode == 0b11100010) { LDH_c_a(); }
-        else if(opcode == 0b11110000) { LDH_a_n(); }
-        else if(opcode == 0b11100000) { LDH_n_a(); }
-
-    }
-    void executeNext() {
-        uint8_t opcode = fetch();
-        execute(opcode);
-    }
-
-    void showMemory(uint16_t window = 5) {
-        uint16_t min = regs.pc < window ? 0 : regs.pc - window;
-        uint16_t max = regs.pc + window > 0xFFFF ? 0xFFFF : regs.pc + window;
-
-        for(int i = min; i < max; i++) {
-            std::bitset<8> value(memory[i]);
-            if(i == regs.pc) {
-                std::cout << "| pc | " << value << " |" << std::endl;
-            } else {
-                std::cout << "|" 
-                << std::showbase << std::internal 
-                << std::uppercase << std::hex 
-                << std::setw(4) << std::setfill('0')  << i 
-                << "| " << value << " |" << std::endl;
-            }
-        }
-        std::cout << std::endl;
-    }
-
-    void runTillNOP(bool showRegisters = true, bool showMem=true) {
-        uint8_t opcode = fetch();
-        while(opcode) {
-            execute(opcode);
-            if(showRegisters) regs.showRegisters();
-            if(showMem) showMemory();
-            opcode = fetch();
-        }
-    }
-
-
-private:
-    //--- Misc/Control instructions ---//
-    void NOP() { std::cout << "NOP OP" << std::endl; }
-    void STOP() {  std::cout << "STOP OP" << std::endl;  }
-    void HALT() {  std::cout << "HALT OP" << std::endl;  }
-    void PREFIX() {  std::cout << "PREFIX OP" << std::endl;  }
-    void DI() {  std::cout << "DI OP" << std::endl;  }
-    void EI() {  std::cout << "EI OP" << std::endl;  }
-
-
-    //--- Load instructions ---//
-    void LD_r_r(Reg8 dest, Reg8 src) {
-        uint8_t value = readReg8(src);
-        writeReg8(dest, value);
-    }
-
-    void LD_r8_n(Reg8 dest) {
-        uint8_t imm = fetch();
-        writeReg8(dest, imm);
-    }
-
-    void LD_r8_hl(Reg8 dest) {
-        uint8_t imm = readReg8(REG_HL_MEM);
-        writeReg8(dest, imm);
-    }
-
-    void LD_hl_r8(Reg8 src) {
-        uint8_t value = readReg8(src);
-        writeReg8(REG_HL_MEM, value);
-    }
-
-    void LD_hl_n() {
-        uint8_t value = fetch();
-        writeReg8(REG_HL_MEM, value);
-    }
-
-    void LD_a_mem(Reg16 src) {
-        uint16_t addr = readReg16(src);
-        uint8_t value = memory[addr];
-        writeReg8(REG_A, value);
-    }
-
-    void LD_mem_a(Reg16 dest) {
-        uint16_t addr = readReg16(dest);
-        uint8_t value = readReg8(REG_A);
-        memory[addr] = value;
-    }
-
-    void LD_a_nn() {
-        uint16_t addr = fetch16();
-        uint8_t value = memory[addr];
-        writeReg8(REG_A, value);
-    }
-
-    void LD_nn_a() {
-        uint16_t addr = fetch16();
-        uint8_t value = readReg8(REG_A);
-        memory[addr] = value;
-    }
-    
-    void LDH_a_c() {
-        uint16_t addr = (0xFF << 8 | readReg8(REG_C));
-        uint8_t value = memory[addr];
-        writeReg8(REG_A, value);
-    }
-
-    void LDH_c_a() {
-        uint16_t addr = (0xFF << 8 | readReg8(REG_C));
-        uint8_t value = readReg8(REG_A);
-        memory[addr] = value;
-    }
-
-    void LDH_a_n(){
-        uint16_t addr = (0xFF << 8 | fetch());
-        uint8_t value = memory[addr];
-        writeReg8(REG_A, value);
-    }
-
-    void LDH_n_a(){
-        uint16_t addr = (0xFF << 8 | fetch());
-        uint8_t value = readReg8(REG_A);
-        memory[addr] = value;
-    }
-};
-
-
-
-
-//--------------------------------------------------------------------------------------------------------------------------//
-
-
-int main(int argc, char **argv) {
-    CPU cpu = CPU();
-
-    cpu.regs.a = 0xF0;
-    cpu.regs.pc = 0xFF00;
-
-    cpu.memory[0xFF00] = 0xE0;
-    cpu.memory[0xFF01] = 0x03;
-
-    cpu.regs.showRegisters();
-    cpu.showMemory();
-
-    cpu.runTillNOP();
+    return 0;
 }
+
+void CPU::writeReg8(Reg8 reg, uint8_t value) {
+    switch (reg) {
+        case REG_B: regs.b = value; break;
+        case REG_C: regs.c = value; break;
+        case REG_D: regs.d = value; break;
+        case REG_E: regs.e = value; break;
+        case REG_H: regs.h = value; break;
+        case REG_L: regs.l = value; break;
+        case REG_A: regs.a = value; break;
+        case REG_HL_MEM: memory[regs.getHL()] = value; break;
+    }
+}
+
+uint16_t CPU::readReg16(Reg16 reg) {
+    switch (reg) {
+        case REG_BC: return regs.getBC();
+        case REG_DE: return regs.getDE();
+        case REG_HL: return regs.getHL();
+        case REG_SP: return regs.sp;
+    }
+    return 0;
+}
+
+void CPU::writeReg16(Reg16 reg, uint16_t value) {
+    switch (reg) {
+        case REG_BC: regs.setBC(value); break;
+        case REG_DE: regs.setDE(value); break;
+        case REG_HL: regs.setHL(value); break;
+        case REG_SP: regs.sp = value; break;
+    }
+}
+
+uint8_t CPU::fetch() {
+    return memory[regs.pc++];
+}
+
+uint16_t CPU::fetch16() {
+    uint8_t lsb = fetch();
+    uint8_t msb = fetch();
+    return (msb << 8) | lsb;
+
+}
+
+void CPU::execute(uint8_t opcode) {
+    switch(opcode) {
+        case 0x00: return NOP();
+        case 0x10: return STOP();
+        case 0x76: return HALT();
+        case 0xCB: return PREFIX();
+        case 0xF3: return DI();
+        case 0xFB: return EI();
+    }
+
+    // Checking immediate before r r for queuing operations in the future
+    if ((opcode & 0b11000111) == 0b01000110) {
+        uint8_t dest = (opcode >> 3) & 0b111;
+        LD_r8_hl(static_cast<Reg8>(dest));
+    }
+
+    else if((opcode & 0b11111000) == 0b01110000) {
+        uint8_t src = (opcode) & 0b111;
+        LD_hl_r8(static_cast<Reg8>(src));
+    }
+
+    else if(( opcode & 0b11000000 ) == 0b01000000) {
+        uint8_t dest = (opcode >> 3) & 0b111;
+        uint8_t src = opcode & 0b111;
+        LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
+    }
+
+    else if(opcode  == 0b00110110) { LD_hl_n(); }
+
+    else if((opcode & 0b11000111) == 0b00000110) {
+        uint8_t dest = (opcode >> 3) & 0b111;
+        LD_r8_n(static_cast<Reg8>(dest));
+    }
+
+    else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
+    else if(opcode == 0b00011010) { LD_a_mem(REG_DE); }
+    else if(opcode == 0b00000010) { LD_mem_a(REG_BC); }
+    else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
+    else if(opcode == 0b11111010) { LD_a_nn(); }
+    else if(opcode == 0b11101010) { LD_nn_a(); }
+    else if(opcode == 0b11110010) { LDH_a_c(); }
+    else if(opcode == 0b11100010) { LDH_c_a(); }
+    else if(opcode == 0b11110000) { LDH_a_n(); }
+    else if(opcode == 0b11100000) { LDH_n_a(); }
+
+    else if(opcode == 0b00111010) { LD_a_hld(); }
+    else if(opcode == 0b00110010) { LD_hld_a(); }
+    else if(opcode == 0b00101010) { LD_a_hli(); }
+    else if(opcode == 0b00100010) { LD_hli_a(); }
+
+    /*else if(( opcode  & 0b11001111) == 0b00000001) {*/
+        /*uint8_t dest = (opcode >> 4) & 0x03;*/
+        /*LD_rr_nn(static_cast<Reg16>(dest));*/
+    /*}*/
+
+}
+void CPU::executeNext() {
+    uint8_t opcode = fetch();
+    execute(opcode);
+}
+
+void CPU::showMemory(uint16_t window) {
+    uint16_t min = regs.pc < window ? 0 : regs.pc - window;
+    uint16_t max = regs.pc + window > 0xFFFF ? 0xFFFF : regs.pc + window;
+
+    for(int i = min; i < max; i++) {
+        std::bitset<8> value(memory[i]);
+        if(i == regs.pc) {
+            std::cout << "| pc | " << value << " |" << std::endl;
+        } else {
+            std::cout << "|" 
+            << std::showbase << std::internal 
+            << std::uppercase << std::hex 
+            << std::setw(4) << std::setfill('0')  << i 
+            << "| " << value << " |" << std::endl;
+        }
+    }
+    std::cout << std::endl;
+}
+
+void CPU::runTillNOP(bool showRegisters, bool showMem) {
+    uint8_t opcode = fetch();
+    while(opcode) {
+        execute(opcode);
+        if(showRegisters) regs.showRegisters();
+        if(showMem) showMemory();
+        opcode = fetch();
+    }
+}
+
+
+//--- Load instructions ---//
+void CPU::LD_r_r(Reg8 dest, Reg8 src) {
+    uint8_t value = readReg8(src);
+    writeReg8(dest, value);
+}
+
+void CPU::LD_r8_n(Reg8 dest) {
+    uint8_t imm = fetch();
+    writeReg8(dest, imm);
+}
+
+void CPU::LD_r8_hl(Reg8 dest) {
+    uint8_t imm = readReg8(REG_HL_MEM);
+    writeReg8(dest, imm);
+}
+
+void CPU::LD_hl_r8(Reg8 src) {
+    uint8_t value = readReg8(src);
+    writeReg8(REG_HL_MEM, value);
+}
+
+void CPU::LD_hl_n() {
+    uint8_t value = fetch();
+    writeReg8(REG_HL_MEM, value);
+}
+
+void CPU::LD_a_mem(Reg16 src) {
+    uint16_t addr = readReg16(src);
+    uint8_t value = memory[addr];
+    writeReg8(REG_A, value);
+}
+
+void CPU::LD_mem_a(Reg16 dest) {
+    uint16_t addr = readReg16(dest);
+    uint8_t value = readReg8(REG_A);
+    memory[addr] = value;
+}
+
+void CPU::LD_a_nn() {
+    uint16_t addr = fetch16();
+    uint8_t value = memory[addr];
+    writeReg8(REG_A, value);
+}
+
+void CPU::LD_nn_a() {
+    uint16_t addr = fetch16();
+    uint8_t value = readReg8(REG_A);
+    memory[addr] = value;
+}
+
+void CPU::LDH_a_c() {
+    uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+    uint8_t value = memory[addr];
+    writeReg8(REG_A, value);
+}
+
+void CPU::LDH_c_a() {
+    uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+    uint8_t value = readReg8(REG_A);
+    memory[addr] = value;
+}
+
+void CPU::LDH_a_n(){
+    uint16_t addr = (0xFF << 8 | fetch());
+    uint8_t value = memory[addr];
+    writeReg8(REG_A, value);
+}
+
+void CPU::LDH_n_a(){
+    uint16_t addr = (0xFF << 8 | fetch());
+    uint8_t value = readReg8(REG_A);
+    memory[addr] = value;
+}
+
+void CPU::LD_a_hld(){
+    uint16_t addr = readReg16(REG_HL);
+    uint8_t value = memory[addr];
+
+    // those two operations only taka one cycle
+    writeReg8(REG_A, value);
+    writeReg16(REG_HL, --addr);
+}
+void CPU::LD_hld_a(){
+    uint16_t addr = readReg16(REG_HL);
+    uint8_t value = readReg8(REG_A);
+
+    // those two operations only taka one cycle
+    memory[addr] = value;
+    writeReg16(REG_HL, --addr);
+}
+void CPU::LD_a_hli(){
+    uint16_t addr = readReg16(REG_HL);
+    uint8_t value = memory[addr];
+
+    // those two operations only taka one cycle
+    writeReg8(REG_A, value);
+    writeReg16(REG_HL, ++addr);
+}
+void CPU::LD_hli_a(){
+    uint16_t addr = readReg16(REG_HL);
+    uint8_t value = readReg8(REG_A);
+
+    // those two operations only taka one cycle
+    memory[addr] = value;
+    writeReg16(REG_HL, ++addr);
+}
+

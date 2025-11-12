@@ -3,7 +3,7 @@ CXXFLAGS = -Wall -std=c++11
 LDFLAGS =
 
 TARGET = gb
-SOURCES = cpu.cpp
+SOURCES = main.cpp cpu.cpp registers.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 all: $(TARGET)
