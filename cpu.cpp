@@ -37,6 +37,17 @@ uint16_t CPU::readReg16(Reg16 reg) {
     return 0;
 }
 
+
+uint8_t CPU::readReg16Mem(Reg16 reg) {
+    switch (reg) {
+        case REG_BC: return memory[regs.getBC()];
+        case REG_DE: return memory[regs.getDE()];
+        case REG_HL: return memory[regs.getHL()];
+        case REG_SP: return memory[regs.sp];
+    }
+    return 0;
+}
+
 void CPU::writeReg16(Reg16 reg, uint16_t value) {
     switch (reg) {
         case REG_BC: regs.setBC(value); break;
@@ -70,12 +81,12 @@ void CPU::execute(uint8_t opcode) {
     // Checking immediate before r r for queuing operations in the future
     if ((opcode & 0b11000111) == 0b01000110) {
         uint8_t dest = (opcode >> 3) & 0b111;
-        LD_r8_hl(static_cast<Reg8>(dest));
+        LD_r_hl(static_cast<Reg8>(dest));
     }
 
     else if((opcode & 0b11111000) == 0b01110000) {
         uint8_t src = (opcode) & 0b111;
-        LD_hl_r8(static_cast<Reg8>(src));
+        LD_hl_r(static_cast<Reg8>(src));
     }
 
     else if(( opcode & 0b11000000 ) == 0b01000000) {
@@ -88,7 +99,7 @@ void CPU::execute(uint8_t opcode) {
 
     else if((opcode & 0b11000111) == 0b00000110) {
         uint8_t dest = (opcode >> 3) & 0b111;
-        LD_r8_n(static_cast<Reg8>(dest));
+        LD_r_n(static_cast<Reg8>(dest));
     }
 
     else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
@@ -102,15 +113,15 @@ void CPU::execute(uint8_t opcode) {
     else if(opcode == 0b11110000) { LDH_a_n(); }
     else if(opcode == 0b11100000) { LDH_n_a(); }
 
-    else if(opcode == 0b00111010) { LD_a_hld(); }
-    else if(opcode == 0b00110010) { LD_hld_a(); }
-    else if(opcode == 0b00101010) { LD_a_hli(); }
-    else if(opcode == 0b00100010) { LD_hli_a(); }
+    else if(opcode == 0b00111010) { LD_a_hl_decrement(); }
+    else if(opcode == 0b00110010) { LD_hl_a_decrement(); }
+    else if(opcode == 0b00101010) { LD_a_hl_increment(); }
+    else if(opcode == 0b00100010) { LD_hl_a_increment(); }
 
-    /*else if(( opcode  & 0b11001111) == 0b00000001) {*/
-        /*uint8_t dest = (opcode >> 4) & 0x03;*/
-        /*LD_rr_nn(static_cast<Reg16>(dest));*/
-    /*}*/
+    else if(( opcode  & 0b11001111) == 0b00000001) {
+        uint8_t dest = (opcode >> 4) & 0x03;
+        LD_rr_nn(static_cast<Reg16>(dest));
+    }
 
 }
 void CPU::executeNext() {
@@ -154,17 +165,17 @@ void CPU::LD_r_r(Reg8 dest, Reg8 src) {
     writeReg8(dest, value);
 }
 
-void CPU::LD_r8_n(Reg8 dest) {
+void CPU::LD_r_n(Reg8 dest) {
     uint8_t imm = fetch();
     writeReg8(dest, imm);
 }
 
-void CPU::LD_r8_hl(Reg8 dest) {
+void CPU::LD_r_hl(Reg8 dest) {
     uint8_t imm = readReg8(REG_HL_MEM);
     writeReg8(dest, imm);
 }
 
-void CPU::LD_hl_r8(Reg8 src) {
+void CPU::LD_hl_r(Reg8 src) {
     uint8_t value = readReg8(src);
     writeReg8(REG_HL_MEM, value);
 }
@@ -210,19 +221,19 @@ void CPU::LDH_c_a() {
     memory[addr] = value;
 }
 
-void CPU::LDH_a_n(){
+void CPU::LDH_a_n() {
     uint16_t addr = (0xFF << 8 | fetch());
     uint8_t value = memory[addr];
     writeReg8(REG_A, value);
 }
 
-void CPU::LDH_n_a(){
+void CPU::LDH_n_a() {
     uint16_t addr = (0xFF << 8 | fetch());
     uint8_t value = readReg8(REG_A);
     memory[addr] = value;
 }
 
-void CPU::LD_a_hld(){
+void CPU::LD_a_hl_decrement() {
     uint16_t addr = readReg16(REG_HL);
     uint8_t value = memory[addr];
 
@@ -230,7 +241,7 @@ void CPU::LD_a_hld(){
     writeReg8(REG_A, value);
     writeReg16(REG_HL, --addr);
 }
-void CPU::LD_hld_a(){
+void CPU::LD_hl_a_decrement() {
     uint16_t addr = readReg16(REG_HL);
     uint8_t value = readReg8(REG_A);
 
@@ -238,7 +249,7 @@ void CPU::LD_hld_a(){
     memory[addr] = value;
     writeReg16(REG_HL, --addr);
 }
-void CPU::LD_a_hli(){
+void CPU::LD_a_hl_increment() {
     uint16_t addr = readReg16(REG_HL);
     uint8_t value = memory[addr];
 
@@ -246,12 +257,16 @@ void CPU::LD_a_hli(){
     writeReg8(REG_A, value);
     writeReg16(REG_HL, ++addr);
 }
-void CPU::LD_hli_a(){
+void CPU::LD_hl_a_increment() {
     uint16_t addr = readReg16(REG_HL);
     uint8_t value = readReg8(REG_A);
 
     // those two operations only taka one cycle
     memory[addr] = value;
     writeReg16(REG_HL, ++addr);
+}
+
+void CPU::LD_rr_nn(Reg16 dest) {
+
 }
 

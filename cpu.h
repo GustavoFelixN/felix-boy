@@ -34,8 +34,11 @@ public:
 
     uint8_t readReg8(Reg8 reg);
     void writeReg8(Reg8 reg, uint8_t value);
+
     uint16_t readReg16(Reg16 reg);
+    uint8_t readReg16Mem(Reg16 reg);
     void writeReg16(Reg16 reg, uint16_t value);
+    void writeReg16Mem(Reg16 reg, uint8_t value);
 
     uint8_t fetch();
     uint16_t fetch16();
@@ -59,9 +62,9 @@ private:
 
     //--- Load instructions ---//
     void LD_r_r(Reg8 dest, Reg8 src);
-    void LD_r8_n(Reg8 dest);
-    void LD_r8_hl(Reg8 dest);
-    void LD_hl_r8(Reg8 src);
+    void LD_r_n(Reg8 dest);
+    void LD_r_hl(Reg8 dest);
+    void LD_hl_r(Reg8 src);
     void LD_hl_n();
     void LD_a_mem(Reg16 src);
     void LD_mem_a(Reg16 dest);
@@ -71,8 +74,10 @@ private:
     void LDH_c_a();
     void LDH_a_n();
     void LDH_n_a();
-    void LD_a_hld();
-    void LD_hld_a();
-    void LD_a_hli();
-    void LD_hli_a();
+    void LD_a_hl_decrement();
+    void LD_hl_a_decrement();
+    void LD_a_hl_increment();
+    void LD_hl_a_increment();
+    void LD_rr_nn(Reg16 src);
+    void LD_nn_rr(Reg16 src);
 };
