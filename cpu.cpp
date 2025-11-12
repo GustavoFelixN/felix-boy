@@ -2,14 +2,14 @@
 
 uint8_t CPU::readReg8(Reg8 reg) {
     switch (reg) {
-        case REG_B: return regs.b;
-        case REG_C: return regs.c;
-        case REG_D: return regs.d;
-        case REG_E: return regs.e;
-        case REG_H: return regs.h;
-        case REG_L: return regs.l;
-        case REG_A: return regs.a;
-        case REG_HL_MEM: return memory[regs.getHL()];
+        case REG_B: return regs.b; break;
+        case REG_C: return regs.c; break;
+        case REG_D: return regs.d; break;
+        case REG_E: return regs.e; break;
+        case REG_H: return regs.h; break;
+        case REG_L: return regs.l; break;
+        case REG_A: return regs.a; break;
+        case REG_HL_MEM: return memory[regs.getHL()]; break;
     }
     return 0;
 }
@@ -29,10 +29,10 @@ void CPU::writeReg8(Reg8 reg, uint8_t value) {
 
 uint16_t CPU::readReg16(Reg16 reg) {
     switch (reg) {
-        case REG_BC: return regs.getBC();
-        case REG_DE: return regs.getDE();
-        case REG_HL: return regs.getHL();
-        case REG_SP: return regs.sp;
+        case REG_BC: return regs.getBC(); break;
+        case REG_DE: return regs.getDE(); break;
+        case REG_HL: return regs.getHL(); break;
+        case REG_SP: return regs.sp; break;
     }
     return 0;
 }
@@ -40,10 +40,10 @@ uint16_t CPU::readReg16(Reg16 reg) {
 
 uint8_t CPU::readReg16Mem(Reg16 reg) {
     switch (reg) {
-        case REG_BC: return memory[regs.getBC()];
-        case REG_DE: return memory[regs.getDE()];
-        case REG_HL: return memory[regs.getHL()];
-        case REG_SP: return memory[regs.sp];
+        case REG_BC: return memory[regs.getBC()]; break;
+        case REG_DE: return memory[regs.getDE()]; break;
+        case REG_HL: return memory[regs.getHL()]; break;
+        case REG_SP: return memory[regs.sp]; break;
     }
     return 0;
 }
