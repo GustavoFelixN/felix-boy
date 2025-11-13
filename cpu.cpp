@@ -57,7 +57,7 @@ void CPU::writeReg16(Reg16 reg, uint16_t value) {
     }
 }
 
-void CPU::writeReg16Mem(Reg16 reg, uint16_t value) {
+void CPU::writeReg16Mem(Reg16 reg, uint8_t value) {
     switch (reg) {
         case REG_BC: memory[regs.getBC()] = value; break;
         case REG_DE: memory[regs.getDE()] = value; break;
