@@ -78,6 +78,6 @@ private:
     void LD_hl_a_decrement();
     void LD_a_hl_increment();
     void LD_hl_a_increment();
-    void LD_rr_nn(Reg16 src);
+    void LD_rr_nn(Reg16 dest);
     void LD_nn_rr(Reg16 src);
 };
