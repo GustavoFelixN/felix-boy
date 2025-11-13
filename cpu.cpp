@@ -57,6 +57,15 @@ void CPU::writeReg16(Reg16 reg, uint16_t value) {
     }
 }
 
+void CPU::writeReg16Mem(Reg16 reg, uint16_t value) {
+    switch (reg) {
+        case REG_BC: memory[regs.getBC()] = value; break;
+        case REG_DE: memory[regs.getDE()] = value; break;
+        case REG_HL: memory[regs.getHL()] = value; break;
+        case REG_SP: memory[regs.sp ] = value; break;
+    }
+}
+
 uint8_t CPU::fetch() {
     return memory[regs.pc++];
 }
