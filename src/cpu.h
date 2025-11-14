@@ -50,7 +50,6 @@ public:
     void showMemory(uint16_t window = 5);
 
 
-private:
     //--- Misc/Control instructions ---//
     void NOP() { std::cout << "NOP OP" << std::endl; }
     void STOP() {  std::cout << "STOP OP" << std::endl;  }
