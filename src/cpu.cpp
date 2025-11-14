@@ -89,23 +89,12 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // Checking immediate before r r for queuing operations in the future
-    if ((opcode & 0b11000111) == 0b01000110) {
-        uint8_t dest = (opcode >> 3) & 0b111;
-        LD_r_hl(static_cast<Reg8>(dest));
-    }
 
-    else if((opcode & 0b11111000) == 0b01110000) {
-        uint8_t src = (opcode) & 0b111;
-        LD_hl_r(static_cast<Reg8>(src));
-    }
-
-    else if(( opcode & 0b11000000 ) == 0b01000000) {
+    if(( opcode & 0b11000000 ) == 0b01000000) {
         uint8_t dest = (opcode >> 3) & 0b111;
         uint8_t src = opcode & 0b111;
         LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
     }
-
-    else if(opcode  == 0b00110110) { LD_hl_n(); }
 
     else if((opcode & 0b11000111) == 0b00000110) {
         uint8_t dest = (opcode >> 3) & 0b111;
@@ -115,7 +104,7 @@ void CPU::execute(uint8_t opcode) {
     else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
     else if(opcode == 0b00011010) { LD_a_mem(REG_DE); }
     else if(opcode == 0b00000010) { LD_mem_a(REG_BC); }
-    else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
+    else if(opcode == 0b00010010) { LD_mem_a(REG_DE); }
     else if(opcode == 0b11111010) { LD_a_nn(); }
     else if(opcode == 0b11101010) { LD_nn_a(); }
     else if(opcode == 0b11110010) { LDH_a_c(); }
@@ -178,21 +167,6 @@ void CPU::LD_r_r(Reg8 dest, Reg8 src) {
 void CPU::LD_r_n(Reg8 dest) {
     uint8_t imm = fetch();
     writeReg8(dest, imm);
-}
-
-void CPU::LD_r_hl(Reg8 dest) {
-    uint8_t imm = readReg8(REG_HL_MEM);
-    writeReg8(dest, imm);
-}
-
-void CPU::LD_hl_r(Reg8 src) {
-    uint8_t value = readReg8(src);
-    writeReg8(REG_HL_MEM, value);
-}
-
-void CPU::LD_hl_n() {
-    uint8_t value = fetch();
-    writeReg8(REG_HL_MEM, value);
 }
 
 void CPU::LD_a_mem(Reg16 src) {

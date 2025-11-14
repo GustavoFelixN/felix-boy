@@ -80,7 +80,7 @@ TEST_CASE("CPU: LD_r_hl", "[cpu][ld]") {
     cpu.regs.setHL(0x2000);
     cpu.memory[0x2000] = 0x77;
 
-    cpu.LD_r_hl(REG_A);
+    cpu.LD_r_r(REG_A, REG_HL_MEM);
 
     REQUIRE(cpu.regs.a == 0x77);
 }
@@ -90,7 +90,7 @@ TEST_CASE("CPU: LD_hl_r", "[cpu][ld]") {
     cpu.regs.setHL(0x3000);
     cpu.regs.d = 0xFE;
 
-    cpu.LD_hl_r(REG_D);
+    cpu.LD_r_r(REG_HL_MEM, REG_D);
     REQUIRE(cpu.memory[0x3000] == 0xFE);
 }
 
@@ -100,7 +100,7 @@ TEST_CASE("CPU: LD_hl_n", "[cpu][ld]") {
     cpu.regs.pc = 0;
     cpu.memory[0] = 0xCC;
 
-    cpu.LD_hl_n();
+    cpu.LD_r_n(REG_HL_MEM);
     REQUIRE(cpu.memory[0x9000] == 0xCC);
 }
 
