@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++11
+CXXFLAGS = -Wall -Wextra -std=c++17
 LDFLAGS =
 
 SRC_DIR = src
@@ -13,12 +13,12 @@ TEST_TARGET = $(TEST_BUILD_DIR)/test_runner
 #
 # Source files
 SRC = $(wildcard $(SRC_DIR)/*.cpp)
-
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(BUILD_SRC_DIR)/%.o)
 
 #
 # Test sources
 TEST_SRC = tests/test_registers.cpp \
+           tests/test_cpu.cpp \
            tests/catch_amalgamated.cpp
 
 # tests include registers.cpp only once (its .o already in OBJ)
@@ -46,7 +46,7 @@ $(BUILD_SRC_DIR)/%.o: $(SRC_DIR)/%.cpp
 test: dirs $(OBJ) $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-$(TEST_TARGET): $(TEST_OBJ) $(BUILD_SRC_DIR)/registers.o
+$(TEST_TARGET): $(TEST_OBJ) $(BUILD_SRC_DIR)/registers.o $(BUILD_SRC_DIR)/cpu.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 #
