@@ -2,26 +2,43 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Itests
 LDFLAGS =
 
-TARGET = gb
-SOURCES = main.cpp cpu.cpp registers.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+BUILD_DIR = build
+TEST_BUILD_DIR = build/tests
 
-TEST_TARGET = test_runner
-TEST_SOURCES = tests/test.cpp tests/catch_amalgamated.cpp registers.cpp
+TARGET = $(BUILD_DIR)/gb
+TEST_TARGET = $(TEST_BUILD_DIR)/test_runner
 
-all: $(TARGET)
+SRC = main.cpp cpu.cpp registers.cpp
+OBJ = $(SRC:%=$(BUILD_DIR)/%.o)
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $(TARGET)
+TEST_SRC = tests/test_registers.cpp tests/catch_amalgamated.cpp registers.cpp
+TEST_OBJ = $(TEST_SRC:%=$(BUILD_DIR)/%.o)
 
-%.o: %.cpp
+.PHONY: all clean test dirs
+all: dirs $(TARGET)
+dirs:
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(TEST_BUILD_DIR)
+
+#
+# Build
+$(TARGET): $(OBJ)
+	$(CXX) $(LDFLAGS) $(OBJ) -o $@
+
+$(BUILD_DIR)/%.cpp.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-test: $(TEST_TARGET)
+
+# Tests
+test: dirs $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-$(TEST_TARGET):
-	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) -o $(TEST_TARGET)
+$(TEST_TARGET): $(TEST_OBJ)
+	$(CXX) $(LDFLAGS) $(TEST_OBJ) -o $@
+
+$(TEST_BUILD_DIR)/%.cpp.o: %.cpp
+	$(CXX) $(CXXFLAGS) -Itests -c $< -o $@
+
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) $(TEST_TARGET)
+	rm -rf build
