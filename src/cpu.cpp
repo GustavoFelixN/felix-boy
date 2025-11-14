@@ -220,25 +220,25 @@ void CPU::LD_nn_a() {
 }
 
 void CPU::LDH_a_c() {
-    uint16_t addr = (0xFF | readReg8(REG_C));
+    uint16_t addr = (0xFF00 | readReg8(REG_C));
     uint8_t value = memory[addr];
     writeReg8(REG_A, value);
 }
 
 void CPU::LDH_c_a() {
-    uint16_t addr = (0xFF | readReg8(REG_C));
+    uint16_t addr = (0xFF00 | readReg8(REG_C));
     uint8_t value = readReg8(REG_A);
     memory[addr] = value;
 }
 
 void CPU::LDH_a_n() {
-    uint16_t addr = (0xFF | fetch());
+    uint16_t addr = (0xFF00 | fetch());
     uint8_t value = memory[addr];
     writeReg8(REG_A, value);
 }
 
 void CPU::LDH_n_a() {
-    uint16_t addr = (0xFF | fetch());
+    uint16_t addr = (0xFF00 | fetch());
     uint8_t value = readReg8(REG_A);
     memory[addr] = value;
 }
