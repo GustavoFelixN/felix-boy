@@ -1,44 +1,58 @@
 CXX = g++
-CXXFLAGS = -Wall -std=c++17 -Itests
+CXXFLAGS = -Wall -Wextra -std=c++11
 LDFLAGS =
 
+SRC_DIR = src
 BUILD_DIR = build
-TEST_BUILD_DIR = build/tests
+BUILD_SRC_DIR = $(BUILD_DIR)/src
+TEST_BUILD_DIR = $(BUILD_DIR)/tests
 
 TARGET = $(BUILD_DIR)/gb
 TEST_TARGET = $(TEST_BUILD_DIR)/test_runner
 
-SRC = main.cpp cpu.cpp registers.cpp
-OBJ = $(SRC:%=$(BUILD_DIR)/%.o)
+#
+# Source files
+SRC = $(wildcard $(SRC_DIR)/*.cpp)
 
-TEST_SRC = tests/test_registers.cpp tests/catch_amalgamated.cpp registers.cpp
-TEST_OBJ = $(TEST_SRC:%=$(BUILD_DIR)/%.o)
+OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(BUILD_SRC_DIR)/%.o)
+
+#
+# Test sources
+TEST_SRC = tests/test_registers.cpp \
+           tests/catch_amalgamated.cpp
+
+# tests include registers.cpp only once (its .o already in OBJ)
+TEST_OBJ = $(TEST_SRC:tests/%.cpp=$(TEST_BUILD_DIR)/%.o)
 
 .PHONY: all clean test dirs
 all: dirs $(TARGET)
+
 dirs:
-	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_SRC_DIR)
 	mkdir -p $(TEST_BUILD_DIR)
 
 #
-# Build
+# Build main target
 $(TARGET): $(OBJ)
 	$(CXX) $(LDFLAGS) $(OBJ) -o $@
 
-$(BUILD_DIR)/%.cpp.o: %.cpp
+#
+# Compile source .cpp → build/src/*.o
+$(BUILD_SRC_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-
+#
 # Tests
-test: dirs $(TEST_TARGET)
+test: dirs $(OBJ) $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-$(TEST_TARGET): $(TEST_OBJ)
-	$(CXX) $(LDFLAGS) $(TEST_OBJ) -o $@
+$(TEST_TARGET): $(TEST_OBJ) $(BUILD_SRC_DIR)/registers.o
+	$(CXX) $(LDFLAGS) $^ -o $@
 
-$(TEST_BUILD_DIR)/%.cpp.o: %.cpp
+#
+# Compile tests → build/tests/*.o
+$(TEST_BUILD_DIR)/%.o: tests/%.cpp
 	$(CXX) $(CXXFLAGS) -Itests -c $< -o $@
-
 
 clean:
 	rm -rf build

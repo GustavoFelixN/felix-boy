@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../registers.h"
+#include "../src/registers.h"
 
 TEST_CASE("Registers 8-bit fields and initialization", "[registers]") {
     Registers r{};
