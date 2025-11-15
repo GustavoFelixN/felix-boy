@@ -88,8 +88,6 @@ void CPU::execute(uint8_t opcode) {
         case 0xFB: return EI();
     }
 
-    // Checking immediate before r r for queuing operations in the future
-
     if(( opcode & 0b11000000 ) == 0b01000000) {
         uint8_t dest = (opcode >> 3) & 0b111;
         uint8_t src = opcode & 0b111;
@@ -121,6 +119,7 @@ void CPU::execute(uint8_t opcode) {
         uint8_t dest = (opcode >> 4) & 0x03;
         LD_rr_nn(static_cast<Reg16>(dest));
     }
+    else if(opcode == 0b00001000) { LD_nn_sp(); }
 
 }
 void CPU::executeNext() {
@@ -253,5 +252,11 @@ void CPU::LD_hl_a_increment() {
 void CPU::LD_rr_nn(Reg16 dest) {
     uint16_t value = fetch16();
     writeReg16(dest, value);
+}
+
+void CPU::LD_nn_sp() {
+    uint16_t addr = fetch16();
+    memory[addr++] = regs.sp & 0xFF;
+    memory[addr] = ( regs.sp >> 8 );
 }
 
