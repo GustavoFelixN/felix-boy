@@ -120,7 +120,7 @@ void CPU::execute(uint8_t opcode) {
         LD_rr_nn(static_cast<Reg16>(dest));
     }
     else if(opcode == 0b00001000) { LD_nn_sp(); }
-
+    else if(opcode == 0b11111001) { LD_sp_hl(); }
 }
 void CPU::executeNext() {
     uint8_t opcode = fetch();
@@ -260,3 +260,6 @@ void CPU::LD_nn_sp() {
     memory[addr] = ( regs.sp >> 8 );
 }
 
+void CPU::LD_sp_hl() {
+    regs.sp = regs.getHL();
+}
