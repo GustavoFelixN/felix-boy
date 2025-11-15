@@ -80,4 +80,6 @@ public:
     void LD_nn_rr(Reg16 src);
     void LD_nn_sp();
     void LD_sp_hl();
+
+    void PUSH(Reg16 src);
 };

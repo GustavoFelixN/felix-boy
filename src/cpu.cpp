@@ -121,6 +121,10 @@ void CPU::execute(uint8_t opcode) {
     }
     else if(opcode == 0b00001000) { LD_nn_sp(); }
     else if(opcode == 0b11111001) { LD_sp_hl(); }
+    else if(( opcode & 0b11001111 ) == 0b11000101) {
+        uint8_t src  = (opcode >> 4) & 0x03;
+        PUSH(static_cast<Reg16>(src));
+    }
 }
 void CPU::executeNext() {
     uint8_t opcode = fetch();
@@ -262,4 +266,10 @@ void CPU::LD_nn_sp() {
 
 void CPU::LD_sp_hl() {
     regs.sp = regs.getHL();
+}
+
+void CPU::PUSH(Reg16 src) {
+    uint16_t value = readReg16(src);
+    memory[--regs.sp] = value >> 8;
+    memory[--regs.sp] = value & 0xFF;
 }
