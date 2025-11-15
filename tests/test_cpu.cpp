@@ -202,3 +202,17 @@ TEST_CASE("CPU: LD_rr_nn", "[cpu][ld16]") {
     cpu.LD_rr_nn(REG_HL);
     REQUIRE(cpu.regs.getHL() == 0xABCD);
 }
+
+TEST_CASE("CPU LD_nn_sp", "[cpu][ld16]") {
+    CPU cpu;
+    cpu.regs.pc = 0;
+    cpu.memory[0] = 0xCD; // low byte
+    cpu.memory[1] = 0xAB; // high byte
+
+    cpu.regs.sp = 0x1234;
+
+    cpu.LD_nn_sp();
+    REQUIRE(cpu.memory[0xABCD] == 0x34);
+    REQUIRE(cpu.memory[0xABCE] == 0x12);
+
+}
