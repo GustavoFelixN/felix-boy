@@ -216,3 +216,13 @@ TEST_CASE("CPU LD_nn_sp", "[cpu][ld16]") {
     REQUIRE(cpu.memory[0xABCE] == 0x12);
 
 }
+
+TEST_CASE("CPU LD_sp_hl", "[cpu][ld16]") {
+    CPU cpu;
+
+    cpu.regs.sp = 0x1234;
+    cpu.regs.setHL(0xABCD);
+
+    cpu.LD_sp_hl();
+    REQUIRE(cpu.regs.sp == 0xABCD);
+}
