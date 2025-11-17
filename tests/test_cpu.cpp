@@ -251,3 +251,45 @@ TEST_CASE("CPU POP", "[cpu][ld16]") {
 
     REQUIRE(cpu.regs.getBC() == 0x1234);
 }
+
+TEST_CASE("CPU: LD_hl_sp_e", "[cpu][ld][hl][sp]") {
+    CPU cpu;
+
+    cpu.regs.sp = 0xFFF8;
+    cpu.regs.pc = 0x200;
+    cpu.memory[cpu.regs.pc] = 0x08;
+
+    cpu.LD_hl_sp_e();
+
+    REQUIRE(cpu.regs.getHL() == 0x0000);
+    REQUIRE(cpu.regs.getFlag(Registers::Z) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::N) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::H) == true);
+    REQUIRE(cpu.regs.getFlag(Registers::C) == true);
+
+    // Caso 2: deslocamento negativo
+    cpu.regs.sp = 0x0100;
+    cpu.regs.pc = 0x300;
+    cpu.memory[cpu.regs.pc] = 0xF0;
+
+    cpu.LD_hl_sp_e();
+
+    REQUIRE(cpu.regs.getHL() == 0x00F0);
+    REQUIRE(cpu.regs.getFlag(Registers::Z) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::N) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::H) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::C) == false);
+
+    // Caso sem carry
+    cpu.regs.sp = 0x1234;
+    cpu.regs.pc = 0x400;
+    cpu.memory[cpu.regs.pc] = 0x01;
+
+    cpu.LD_hl_sp_e();
+
+    REQUIRE(cpu.regs.getHL() == 0x1235);
+    REQUIRE(cpu.regs.getFlag(Registers::Z) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::N) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::H) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::C) == false);
+}
