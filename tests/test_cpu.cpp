@@ -238,3 +238,16 @@ TEST_CASE("CPU PUSH", "[cpu][ld16]") {
     REQUIRE(cpu.memory[0xFFFE] == 0x12);
     REQUIRE(cpu.memory[0xFFFD] == 0x34);
 }
+
+
+TEST_CASE("CPU POP", "[cpu][ld16]") {
+    CPU cpu;
+
+    cpu.regs.sp = 0xFFFD;
+    cpu.memory[0xFFFD] = 0x34;
+    cpu.memory[0xFFFE] = 0x12;
+
+    cpu.POP(REG_BC);
+
+    REQUIRE(cpu.regs.getBC() == 0x1234);
+}
