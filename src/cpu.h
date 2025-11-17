@@ -83,4 +83,6 @@ public:
 
     void PUSH(Reg16 src);
     void POP(Reg16 src);
+
+    void LD_hl_sp_e();
 };

@@ -121,10 +121,17 @@ void CPU::execute(uint8_t opcode) {
     }
     else if(opcode == 0b00001000) { LD_nn_sp(); }
     else if(opcode == 0b11111001) { LD_sp_hl(); }
-    else if(( opcode & 0b11001111 ) == 0b11000101) {
+
+    else if((opcode & 0b11001111) == 0b11000101) {
         uint8_t src  = (opcode >> 4) & 0x03;
         PUSH(static_cast<Reg16>(src));
     }
+    else if((opcode & 0b11001111) == 0b11000001) {
+        uint8_t dest  = (opcode >> 4) & 0x03;
+        POP(static_cast<Reg16>(src));
+    }
+
+    else if(opcode == 0b11111000) { LD_hl_sp_e() }
 }
 void CPU::executeNext() {
     uint8_t opcode = fetch();
@@ -279,4 +286,20 @@ void CPU::POP(Reg16 dest) {
     uint8_t msb = memory[regs.sp++];
     uint16_t value = (msb << 8) | lsb;
     writeReg16(dest, value);
+}
+
+void CPU::LD_hl_sp_e() {
+    int8_t e = static_cast<int8_t>(fetch());
+    uint16_t sp = regs.sp;
+    uint16_t result = sp + e;
+
+    bool halfCarry = ((sp & 0xF) + (e & 0xF)) > 0xF;
+    bool carry =     ((sp & 0xFF) + static_cast<uint8_t>(e)) > 0xFF;
+
+    regs.setHL(result);
+
+    regs.setFlag(Registers::Z, false);
+    regs.setFlag(Registers::N, false);
+    regs.setFlag(Registers::H, halfCarry);
+    regs.setFlag(Registers::C, carry);
 }
