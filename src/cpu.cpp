@@ -273,3 +273,10 @@ void CPU::PUSH(Reg16 src) {
     memory[--regs.sp] = value >> 8;
     memory[--regs.sp] = value & 0xFF;
 }
+
+void CPU::POP(Reg16 dest) {
+    uint8_t lsb = memory[regs.sp++];
+    uint8_t msb = memory[regs.sp++];
+    uint16_t value = (msb << 8) | lsb;
+    writeReg16(dest, value);
+}
