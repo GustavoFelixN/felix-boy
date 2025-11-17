@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "instructions/opcode.h"
 #include <cstdint>
 
 uint8_t CPU::readReg8(Reg8 reg) {

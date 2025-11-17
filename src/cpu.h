@@ -34,10 +34,9 @@ public:
     uint8_t memory[65536] = {0};
 
     uint8_t readReg8(Reg8 reg);
-    void writeReg8(Reg8 reg, uint8_t value);
-
     uint16_t readReg16(Reg16 reg);
     uint8_t readReg16Mem(Reg16 reg);
+    void writeReg8(Reg8 reg, uint8_t value);
     void writeReg16(Reg16 reg, uint16_t value);
     void writeReg16Mem(Reg16 reg, uint8_t value);
 
@@ -77,12 +76,11 @@ public:
     void LD_hl_a_increment();
 
     void LD_rr_nn(Reg16 dest);
-    void LD_nn_rr(Reg16 src);
     void LD_nn_sp();
     void LD_sp_hl();
 
     void PUSH(Reg16 src);
-    void POP(Reg16 src);
+    void POP(Reg16 dest);
 
     void LD_hl_sp_e();
 };
