@@ -2,6 +2,10 @@
 #include "instructions/opcode.h"
 #include <cstdint>
 
+CPU::CPU() {
+    initOpcodes();
+}
+
 uint8_t CPU::readReg8(Reg8 reg) {
     switch (reg) {
         case REG_B: return regs.b; break;
@@ -88,52 +92,52 @@ void CPU::execute(uint8_t opcode) {
         case 0xF3: return DI();
         case 0xFB: return EI();
     }
-
-    if(( opcode & 0b11000000 ) == 0b01000000) {
-        uint8_t dest = (opcode >> 3) & 0b111;
-        uint8_t src = opcode & 0b111;
-        return LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
-    }
-
-    else if((opcode & 0b11000111) == 0b00000110) {
-        uint8_t dest = (opcode >> 3) & 0b111;
-        return LD_r_n(static_cast<Reg8>(dest));
-    }
-
-    else if(opcode == 0b00001010) { return LD_a_mem(REG_BC); }
-    else if(opcode == 0b00011010) { return LD_a_mem(REG_DE); }
-    else if(opcode == 0b00000010) { return LD_mem_a(REG_BC); }
-    else if(opcode == 0b00010010) { return LD_mem_a(REG_DE); }
-    else if(opcode == 0b11111010) { return LD_a_nn(); }
-    else if(opcode == 0b11101010) { return LD_nn_a(); }
-    else if(opcode == 0b11110010) { return LDH_a_c(); }
-    else if(opcode == 0b11100010) { return LDH_c_a(); }
-    else if(opcode == 0b11110000) { return LDH_a_n(); }
-    else if(opcode == 0b11100000) { return LDH_n_a(); }
-
-    else if(opcode == 0b00111010) { return LD_a_hl_decrement(); }
-    else if(opcode == 0b00110010) { return LD_hl_a_decrement(); }
-    else if(opcode == 0b00101010) { return LD_a_hl_increment(); }
-    else if(opcode == 0b00100010) { return LD_hl_a_increment(); }
-
-    else if(( opcode  & 0b11001111) == 0b00000001) {
-        uint8_t dest = (opcode >> 4) & 0x03;
-        return LD_rr_nn(static_cast<Reg16>(dest));
-    }
-    else if(opcode == 0b00001000) { return LD_nn_sp(); }
-    else if(opcode == 0b11111001) { return LD_sp_hl(); }
-
-    else if((opcode & 0b11001111) == 0b11000101) {
-        uint8_t src  = (opcode >> 4) & 0x03;
-        return PUSH(static_cast<Reg16>(src));
-    }
-
-    else if((opcode & 0b11001111) == 0b11000001) {
-        uint8_t dest  = (opcode >> 4) & 0x03;
-        return POP(static_cast<Reg16>(dest));
-    }
-
-    else if(opcode == 0b11111000) { return LD_hl_sp_e(); }
+    OPCODE_TABLE[opcode](*this, opcode);
+    // if(( opcode & 0b11000000 ) == 0b01000000) {
+    //     uint8_t dest = (opcode >> 3) & 0b111;
+    //     uint8_t src = opcode & 0b111;
+    //     return LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
+    // }
+    //
+    // else if((opcode & 0b11000111) == 0b00000110) {
+    //     uint8_t dest = (opcode >> 3) & 0b111;
+    //     return LD_r_n(static_cast<Reg8>(dest));
+    // }
+    //
+    // else if(opcode == 0b00001010) { return LD_a_mem(REG_BC); }
+    // else if(opcode == 0b00011010) { return LD_a_mem(REG_DE); }
+    // else if(opcode == 0b00000010) { return LD_mem_a(REG_BC); }
+    // else if(opcode == 0b00010010) { return LD_mem_a(REG_DE); }
+    // else if(opcode == 0b11111010) { return LD_a_nn(); }
+    // else if(opcode == 0b11101010) { return LD_nn_a(); }
+    // else if(opcode == 0b11110010) { return LDH_a_c(); }
+    // else if(opcode == 0b11100010) { return LDH_c_a(); }
+    // else if(opcode == 0b11110000) { return LDH_a_n(); }
+    // else if(opcode == 0b11100000) { return LDH_n_a(); }
+    //
+    // else if(opcode == 0b00111010) { return LD_a_hl_decrement(); }
+    // else if(opcode == 0b00110010) { return LD_hl_a_decrement(); }
+    // else if(opcode == 0b00101010) { return LD_a_hl_increment(); }
+    // else if(opcode == 0b00100010) { return LD_hl_a_increment(); }
+    //
+    // else if(( opcode  & 0b11001111) == 0b00000001) {
+    //     uint8_t dest = (opcode >> 4) & 0x03;
+    //     return LD_rr_nn(static_cast<Reg16>(dest));
+    // }
+    // else if(opcode == 0b00001000) { return LD_nn_sp(); }
+    // else if(opcode == 0b11111001) { return LD_sp_hl(); }
+    //
+    // else if((opcode & 0b11001111) == 0b11000101) {
+    //     uint8_t src  = (opcode >> 4) & 0x03;
+    //     return PUSH(static_cast<Reg16>(src));
+    // }
+    //
+    // else if((opcode & 0b11001111) == 0b11000001) {
+    //     uint8_t dest  = (opcode >> 4) & 0x03;
+    //     return POP(static_cast<Reg16>(dest));
+    // }
+    //
+    // else if(opcode == 0b11111000) { return LD_hl_sp_e(); }
 }
 void CPU::executeNext() {
     uint8_t opcode = fetch();
