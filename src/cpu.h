@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <iomanip>
 #include "registers.h"
 
@@ -50,7 +51,6 @@ public:
     void showMemory(uint16_t window = 5);
 
 
-private:
     //--- Misc/Control instructions ---//
     void NOP() { std::cout << "NOP OP" << std::endl; }
     void STOP() {  std::cout << "STOP OP" << std::endl;  }
@@ -63,9 +63,6 @@ private:
     //--- Load instructions ---//
     void LD_r_r(Reg8 dest, Reg8 src);
     void LD_r_n(Reg8 dest);
-    void LD_r_hl(Reg8 dest);
-    void LD_hl_r(Reg8 src);
-    void LD_hl_n();
     void LD_a_mem(Reg16 src);
     void LD_mem_a(Reg16 dest);
     void LD_a_nn();
@@ -78,6 +75,14 @@ private:
     void LD_hl_a_decrement();
     void LD_a_hl_increment();
     void LD_hl_a_increment();
-    void LD_rr_nn(Reg16 src);
+
+    void LD_rr_nn(Reg16 dest);
     void LD_nn_rr(Reg16 src);
+    void LD_nn_sp();
+    void LD_sp_hl();
+
+    void PUSH(Reg16 src);
+    void POP(Reg16 src);
+
+    void LD_hl_sp_e();
 };

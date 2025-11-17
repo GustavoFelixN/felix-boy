@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <cstdint>
 
 uint8_t CPU::readReg8(Reg8 reg) {
     switch (reg) {
@@ -62,7 +63,7 @@ void CPU::writeReg16Mem(Reg16 reg, uint8_t value) {
         case REG_BC: memory[regs.getBC()] = value; break;
         case REG_DE: memory[regs.getDE()] = value; break;
         case REG_HL: memory[regs.getHL()] = value; break;
-        case REG_SP: memory[regs.sp ] = value; break;
+        case REG_SP: memory[regs.sp] = value; break;
     }
 }
 
@@ -87,24 +88,11 @@ void CPU::execute(uint8_t opcode) {
         case 0xFB: return EI();
     }
 
-    // Checking immediate before r r for queuing operations in the future
-    if ((opcode & 0b11000111) == 0b01000110) {
-        uint8_t dest = (opcode >> 3) & 0b111;
-        LD_r_hl(static_cast<Reg8>(dest));
-    }
-
-    else if((opcode & 0b11111000) == 0b01110000) {
-        uint8_t src = (opcode) & 0b111;
-        LD_hl_r(static_cast<Reg8>(src));
-    }
-
-    else if(( opcode & 0b11000000 ) == 0b01000000) {
+    if(( opcode & 0b11000000 ) == 0b01000000) {
         uint8_t dest = (opcode >> 3) & 0b111;
         uint8_t src = opcode & 0b111;
         LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
     }
-
-    else if(opcode  == 0b00110110) { LD_hl_n(); }
 
     else if((opcode & 0b11000111) == 0b00000110) {
         uint8_t dest = (opcode >> 3) & 0b111;
@@ -114,7 +102,7 @@ void CPU::execute(uint8_t opcode) {
     else if(opcode == 0b00001010) { LD_a_mem(REG_BC); }
     else if(opcode == 0b00011010) { LD_a_mem(REG_DE); }
     else if(opcode == 0b00000010) { LD_mem_a(REG_BC); }
-    else if(opcode == 0b00010010) { LD_mem_a(REG_BC); }
+    else if(opcode == 0b00010010) { LD_mem_a(REG_DE); }
     else if(opcode == 0b11111010) { LD_a_nn(); }
     else if(opcode == 0b11101010) { LD_nn_a(); }
     else if(opcode == 0b11110010) { LDH_a_c(); }
@@ -131,7 +119,19 @@ void CPU::execute(uint8_t opcode) {
         uint8_t dest = (opcode >> 4) & 0x03;
         LD_rr_nn(static_cast<Reg16>(dest));
     }
+    else if(opcode == 0b00001000) { LD_nn_sp(); }
+    else if(opcode == 0b11111001) { LD_sp_hl(); }
 
+    else if((opcode & 0b11001111) == 0b11000101) {
+        uint8_t src  = (opcode >> 4) & 0x03;
+        PUSH(static_cast<Reg16>(src));
+    }
+    else if((opcode & 0b11001111) == 0b11000001) {
+        uint8_t dest  = (opcode >> 4) & 0x03;
+        POP(static_cast<Reg16>(src));
+    }
+
+    else if(opcode == 0b11111000) { LD_hl_sp_e() }
 }
 void CPU::executeNext() {
     uint8_t opcode = fetch();
@@ -179,21 +179,6 @@ void CPU::LD_r_n(Reg8 dest) {
     writeReg8(dest, imm);
 }
 
-void CPU::LD_r_hl(Reg8 dest) {
-    uint8_t imm = readReg8(REG_HL_MEM);
-    writeReg8(dest, imm);
-}
-
-void CPU::LD_hl_r(Reg8 src) {
-    uint8_t value = readReg8(src);
-    writeReg8(REG_HL_MEM, value);
-}
-
-void CPU::LD_hl_n() {
-    uint8_t value = fetch();
-    writeReg8(REG_HL_MEM, value);
-}
-
 void CPU::LD_a_mem(Reg16 src) {
     uint16_t addr = readReg16(src);
     uint8_t value = memory[addr];
@@ -219,25 +204,25 @@ void CPU::LD_nn_a() {
 }
 
 void CPU::LDH_a_c() {
-    uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+    uint16_t addr = (0xFF00 | readReg8(REG_C));
     uint8_t value = memory[addr];
     writeReg8(REG_A, value);
 }
 
 void CPU::LDH_c_a() {
-    uint16_t addr = (0xFF << 8 | readReg8(REG_C));
+    uint16_t addr = (0xFF00 | readReg8(REG_C));
     uint8_t value = readReg8(REG_A);
     memory[addr] = value;
 }
 
 void CPU::LDH_a_n() {
-    uint16_t addr = (0xFF << 8 | fetch());
+    uint16_t addr = (0xFF00 | fetch());
     uint8_t value = memory[addr];
     writeReg8(REG_A, value);
 }
 
 void CPU::LDH_n_a() {
-    uint16_t addr = (0xFF << 8 | fetch());
+    uint16_t addr = (0xFF00 | fetch());
     uint8_t value = readReg8(REG_A);
     memory[addr] = value;
 }
@@ -276,6 +261,45 @@ void CPU::LD_hl_a_increment() {
 }
 
 void CPU::LD_rr_nn(Reg16 dest) {
-
+    uint16_t value = fetch16();
+    writeReg16(dest, value);
 }
 
+void CPU::LD_nn_sp() {
+    uint16_t addr = fetch16();
+    memory[addr++] = regs.sp & 0xFF;
+    memory[addr] = ( regs.sp >> 8 );
+}
+
+void CPU::LD_sp_hl() {
+    regs.sp = regs.getHL();
+}
+
+void CPU::PUSH(Reg16 src) {
+    uint16_t value = readReg16(src);
+    memory[--regs.sp] = value >> 8;
+    memory[--regs.sp] = value & 0xFF;
+}
+
+void CPU::POP(Reg16 dest) {
+    uint8_t lsb = memory[regs.sp++];
+    uint8_t msb = memory[regs.sp++];
+    uint16_t value = (msb << 8) | lsb;
+    writeReg16(dest, value);
+}
+
+void CPU::LD_hl_sp_e() {
+    int8_t e = static_cast<int8_t>(fetch());
+    uint16_t sp = regs.sp;
+    uint16_t result = sp + e;
+
+    bool halfCarry = ((sp & 0xF) + (e & 0xF)) > 0xF;
+    bool carry =     ((sp & 0xFF) + static_cast<uint8_t>(e)) > 0xFF;
+
+    regs.setHL(result);
+
+    regs.setFlag(Registers::Z, false);
+    regs.setFlag(Registers::N, false);
+    regs.setFlag(Registers::H, halfCarry);
+    regs.setFlag(Registers::C, carry);
+}
