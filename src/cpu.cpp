@@ -8,67 +8,66 @@ CPU::CPU() {
 
 uint8_t CPU::readReg8(Reg8 reg) {
     switch (reg) {
-        case REG_B: return regs.b; break;
-        case REG_C: return regs.c; break;
-        case REG_D: return regs.d; break;
-        case REG_E: return regs.e; break;
-        case REG_H: return regs.h; break;
-        case REG_L: return regs.l; break;
-        case REG_A: return regs.a; break;
-        case REG_HL_MEM: return memory[regs.getHL()]; break;
+        case REG_B: return regs.b; 
+        case REG_C: return regs.c; 
+        case REG_D: return regs.d; 
+        case REG_E: return regs.e; 
+        case REG_H: return regs.h; 
+        case REG_L: return regs.l; 
+        case REG_A: return regs.a; 
+        case REG_HL_MEM: return memory[regs.getHL()]; 
     }
     return 0;
 }
 
 void CPU::writeReg8(Reg8 reg, uint8_t value) {
     switch (reg) {
-        case REG_B: regs.b = value; break;
-        case REG_C: regs.c = value; break;
-        case REG_D: regs.d = value; break;
-        case REG_E: regs.e = value; break;
-        case REG_H: regs.h = value; break;
-        case REG_L: regs.l = value; break;
-        case REG_A: regs.a = value; break;
-        case REG_HL_MEM: memory[regs.getHL()] = value; break;
+        case REG_B: regs.b = value; 
+        case REG_C: regs.c = value; 
+        case REG_D: regs.d = value; 
+        case REG_E: regs.e = value; 
+        case REG_H: regs.h = value; 
+        case REG_L: regs.l = value; 
+        case REG_A: regs.a = value; 
+        case REG_HL_MEM: memory[regs.getHL()] = value; 
     }
 }
 
 uint16_t CPU::readReg16(Reg16 reg) {
     switch (reg) {
-        case REG_BC: return regs.getBC(); break;
-        case REG_DE: return regs.getDE(); break;
-        case REG_HL: return regs.getHL(); break;
-        case REG_SP: return regs.sp; break;
+        case REG_BC: return regs.getBC(); 
+        case REG_DE: return regs.getDE(); 
+        case REG_HL: return regs.getHL(); 
+        case REG_SP: return regs.sp; 
     }
     return 0;
 }
 
-
 uint8_t CPU::readReg16Mem(Reg16 reg) {
     switch (reg) {
-        case REG_BC: return memory[regs.getBC()]; break;
-        case REG_DE: return memory[regs.getDE()]; break;
-        case REG_HL: return memory[regs.getHL()]; break;
-        case REG_SP: return memory[regs.sp]; break;
+        case REG_BC: return memory[regs.getBC()]; 
+        case REG_DE: return memory[regs.getDE()]; 
+        case REG_HL: return memory[regs.getHL()]; 
+        case REG_SP: return memory[regs.sp]; 
     }
     return 0;
 }
 
 void CPU::writeReg16(Reg16 reg, uint16_t value) {
     switch (reg) {
-        case REG_BC: regs.setBC(value); break;
-        case REG_DE: regs.setDE(value); break;
-        case REG_HL: regs.setHL(value); break;
-        case REG_SP: regs.sp = value; break;
+        case REG_BC: regs.setBC(value); 
+        case REG_DE: regs.setDE(value); 
+        case REG_HL: regs.setHL(value); 
+        case REG_SP: regs.sp = value; 
     }
 }
 
 void CPU::writeReg16Mem(Reg16 reg, uint8_t value) {
     switch (reg) {
-        case REG_BC: memory[regs.getBC()] = value; break;
-        case REG_DE: memory[regs.getDE()] = value; break;
-        case REG_HL: memory[regs.getHL()] = value; break;
-        case REG_SP: memory[regs.sp] = value; break;
+        case REG_BC: memory[regs.getBC()] = value; 
+        case REG_DE: memory[regs.getDE()] = value; 
+        case REG_HL: memory[regs.getHL()] = value; 
+        case REG_SP: memory[regs.sp] = value; 
     }
 }
 
@@ -80,65 +79,12 @@ uint16_t CPU::fetch16() {
     uint8_t lsb = fetch();
     uint8_t msb = fetch();
     return (msb << 8) | lsb;
-
 }
 
 void CPU::execute(uint8_t opcode) {
-    switch(opcode) {
-        case 0x00: return NOP();
-        case 0x10: return STOP();
-        case 0x76: return HALT();
-        case 0xCB: return PREFIX();
-        case 0xF3: return DI();
-        case 0xFB: return EI();
-    }
     OPCODE_TABLE[opcode](*this, opcode);
-    // if(( opcode & 0b11000000 ) == 0b01000000) {
-    //     uint8_t dest = (opcode >> 3) & 0b111;
-    //     uint8_t src = opcode & 0b111;
-    //     return LD_r_r(static_cast<Reg8>(dest), static_cast<Reg8>(src));
-    // }
-    //
-    // else if((opcode & 0b11000111) == 0b00000110) {
-    //     uint8_t dest = (opcode >> 3) & 0b111;
-    //     return LD_r_n(static_cast<Reg8>(dest));
-    // }
-    //
-    // else if(opcode == 0b00001010) { return LD_a_mem(REG_BC); }
-    // else if(opcode == 0b00011010) { return LD_a_mem(REG_DE); }
-    // else if(opcode == 0b00000010) { return LD_mem_a(REG_BC); }
-    // else if(opcode == 0b00010010) { return LD_mem_a(REG_DE); }
-    // else if(opcode == 0b11111010) { return LD_a_nn(); }
-    // else if(opcode == 0b11101010) { return LD_nn_a(); }
-    // else if(opcode == 0b11110010) { return LDH_a_c(); }
-    // else if(opcode == 0b11100010) { return LDH_c_a(); }
-    // else if(opcode == 0b11110000) { return LDH_a_n(); }
-    // else if(opcode == 0b11100000) { return LDH_n_a(); }
-    //
-    // else if(opcode == 0b00111010) { return LD_a_hl_decrement(); }
-    // else if(opcode == 0b00110010) { return LD_hl_a_decrement(); }
-    // else if(opcode == 0b00101010) { return LD_a_hl_increment(); }
-    // else if(opcode == 0b00100010) { return LD_hl_a_increment(); }
-    //
-    // else if(( opcode  & 0b11001111) == 0b00000001) {
-    //     uint8_t dest = (opcode >> 4) & 0x03;
-    //     return LD_rr_nn(static_cast<Reg16>(dest));
-    // }
-    // else if(opcode == 0b00001000) { return LD_nn_sp(); }
-    // else if(opcode == 0b11111001) { return LD_sp_hl(); }
-    //
-    // else if((opcode & 0b11001111) == 0b11000101) {
-    //     uint8_t src  = (opcode >> 4) & 0x03;
-    //     return PUSH(static_cast<Reg16>(src));
-    // }
-    //
-    // else if((opcode & 0b11001111) == 0b11000001) {
-    //     uint8_t dest  = (opcode >> 4) & 0x03;
-    //     return POP(static_cast<Reg16>(dest));
-    // }
-    //
-    // else if(opcode == 0b11111000) { return LD_hl_sp_e(); }
 }
+
 void CPU::executeNext() {
     uint8_t opcode = fetch();
     execute(opcode);
