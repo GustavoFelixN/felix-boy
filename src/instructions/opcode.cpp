@@ -4,15 +4,11 @@
 std::array<InstrFn, 256> OPCODE_TABLE;
 
 void initOpcodes() {
-    OPCODE_TABLE[0x00] = instr::NOP;
-    OPCODE_TABLE[0x10] = instr::STOP;
-    OPCODE_TABLE[0x76] = instr::HALT;
-    OPCODE_TABLE[0xCB] = instr::PREFIX;
-    OPCODE_TABLE[0xF3] = instr::DI;
-    OPCODE_TABLE[0xFB] = instr::EI;
-
     for(uint8_t op = 0x06; op <= 0x3E; op += 8)
         OPCODE_TABLE[op] = instr::LD_r_n;
+
+    for(uint8_t op = 0x40; op <= 0x7F; op++)
+        OPCODE_TABLE[op] = instr::LD_r_r;
 
     OPCODE_TABLE[0x0A] = instr::LD_a_mem;
     OPCODE_TABLE[0x1A] = instr::LD_a_mem;
@@ -42,4 +38,11 @@ void initOpcodes() {
     OPCODE_TABLE[0xF9] = instr::LD_sp_hl;
 
     OPCODE_TABLE[0xF8] = instr::LD_hl_sp_e;
+
+    OPCODE_TABLE[0x00] = instr::NOP;
+    OPCODE_TABLE[0x10] = instr::STOP;
+    OPCODE_TABLE[0x76] = instr::HALT;
+    OPCODE_TABLE[0xCB] = instr::PREFIX;
+    OPCODE_TABLE[0xF3] = instr::DI;
+    OPCODE_TABLE[0xFB] = instr::EI;
 }
