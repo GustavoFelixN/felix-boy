@@ -128,6 +128,8 @@ TEST_CASE("CPU: LD_a_nn / LD_nn_a", "[cpu][ld]") {
     REQUIRE(cpu.regs.a == 0x77);
 
     cpu.regs.pc = 0;
+    cpu.memory[0] = 0x34;
+    cpu.memory[1] = 0x12;
     cpu.memory[0x1234] = 0x00;
     cpu.regs.a = 0xAB;
 
