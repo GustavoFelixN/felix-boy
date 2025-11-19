@@ -1,6 +1,8 @@
 #include "cpu.h"
+#include "instructions/opcode.h"
 
 int main(int argc, char **argv) {
+    initOpcodes();
     CPU cpu = CPU();
 
     cpu.regs.a = 0x00;

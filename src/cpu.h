@@ -30,7 +30,6 @@ enum Reg16Stk {
 
 class CPU {
 public:
-    CPU();
     Registers regs;
     uint8_t memory[65536] = {0};
 

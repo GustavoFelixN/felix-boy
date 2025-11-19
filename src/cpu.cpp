@@ -2,10 +2,6 @@
 #include "instructions/opcode.h"
 #include <cstdint>
 
-CPU::CPU() {
-    initOpcodes();
-}
-
 uint8_t CPU::readReg8(Reg8 reg) {
     switch (reg) {
         case REG_B: return regs.b; 
