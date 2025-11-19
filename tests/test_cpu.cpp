@@ -2,6 +2,8 @@
 #include "catch_amalgamated.hpp"
 #include "../src/cpu.h"
 #include "../src/registers.h"
+#include "../src/instructions/opcode.h"
+
 
 TEST_CASE("CPU: read/write Reg8", "[cpu]") {
     CPU cpu;
@@ -295,3 +297,202 @@ TEST_CASE("CPU: LD_hl_sp_e", "[cpu][ld][hl][sp]") {
     REQUIRE(cpu.regs.getFlag(Registers::H) == false);
     REQUIRE(cpu.regs.getFlag(Registers::C) == false);
 }
+
+
+TEST_CASE("Opcode: LD_r_r (0x41)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.b = 0x00;
+    cpu.regs.c = 0x5A;
+
+    cpu.memory[0] = 0x41; // LD B, C
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.b == 0x5A);
+    REQUIRE(cpu.regs.pc == 1);
+}
+
+TEST_CASE("Opcode: LD_r_n (0x3E)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.memory[0] = 0x3E; // LD A, n
+    cpu.memory[1] = 0x42; // immediate
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.a == 0x42);
+    REQUIRE(cpu.regs.pc == 2);
+}
+
+TEST_CASE("Opcode: LD_hl_r (0x70)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.setHL(0x2000);
+    cpu.regs.b = 0x22;
+
+    cpu.memory[0] = 0x70; // LD (HL), B
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.memory[0x2000] == 0x22);
+    REQUIRE(cpu.regs.pc == 1);
+}
+
+TEST_CASE("Opcode: LD_r_hl (0x7E)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.setHL(0x3000);
+    cpu.memory[0x3000] = 0x99;
+
+    cpu.memory[0] = 0x7E; // LD A, (HL)
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.a == 0x99);
+    REQUIRE(cpu.regs.pc == 1);
+}
+
+TEST_CASE("Opcode: LD A, (BC) (0x0A)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.setBC(0x4000);
+    cpu.memory[0x4000] = 0x77;
+
+    cpu.memory[0] = 0x0A;
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.a == 0x77);
+    REQUIRE(cpu.regs.pc == 1);
+}
+
+TEST_CASE("Opcode: LD (DE), A (0x12)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.setDE(0x5000);
+    cpu.regs.a = 0xAB;
+
+    cpu.memory[0] = 0x12;
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.memory[0x5000] == 0xAB);
+    REQUIRE(cpu.regs.pc == 1);
+}
+
+TEST_CASE("Opcode: LD A, (nn) (0xFA)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.memory[0] = 0xFA;
+    cpu.memory[1] = 0x34; // low
+    cpu.memory[2] = 0x12; // high
+
+    cpu.memory[0x1234] = 0xA7;
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.a == 0xA7);
+    REQUIRE(cpu.regs.pc == 3);
+}
+
+TEST_CASE("Opcode: LD (nn), A (0xEA)", "[opcode][ld]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.memory[0] = 0xEA;
+    cpu.memory[1] = 0x00;
+    cpu.memory[2] = 0xC0;
+
+    cpu.regs.a = 0xFE;
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.memory[0xC000] == 0xFE);
+    REQUIRE(cpu.regs.pc == 3);
+}
+
+TEST_CASE("Opcode: LDH instructions", "[opcode][ldh]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.c = 0x20;
+    cpu.memory[0xFF20] = 0x55;
+
+    cpu.memory[0] = 0xF2; // LD A, (FF00 + C)
+    cpu.step();
+    REQUIRE(cpu.regs.a == 0x55);
+
+    cpu.regs.a = 0x90;
+    cpu.memory[0] = 0xE2; // LD (FF00 + C), A
+    cpu.regs.pc = 0;
+    cpu.step();
+    REQUIRE(cpu.memory[0xFF20] == 0x90);
+
+    cpu.memory[0] = 0xF0; // LD A, (FF00 + n)
+    cpu.memory[1] = 0x10;
+    cpu.memory[0xFF10] = 0xDE;
+    cpu.regs.pc = 0;
+    cpu.step();
+    REQUIRE(cpu.regs.a == 0xDE);
+
+    cpu.regs.a = 0xEE;
+    cpu.memory[0] = 0xE0; // LD (FF00 + n), A
+    cpu.memory[1] = 0x30;
+    cpu.regs.pc = 0;
+    cpu.step();
+    REQUIRE(cpu.memory[0xFF30] == 0xEE);
+}
+
+TEST_CASE("Opcode: LD HL, SP+e (0xF8)", "[opcode][ld][sp]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.sp = 0xFFF8;
+    cpu.memory[0] = 0xF8;
+    cpu.memory[1] = 0x08; // +8
+    cpu.regs.pc = 0;
+
+    cpu.step();
+
+    REQUIRE(cpu.regs.getHL() == 0x0000);
+    REQUIRE(cpu.regs.getFlag(Registers::Z) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::N) == false);
+    REQUIRE(cpu.regs.getFlag(Registers::H) == true);
+    REQUIRE(cpu.regs.getFlag(Registers::C) == true);
+}
+
+/*TEST_CASE("Opcode: PUSH/POP BC", "[opcode][stack]") {*/
+/*    initOpcodes();*/
+/*    CPU cpu;*/
+/**/
+/*    cpu.regs.sp = 0xFFFE;*/
+/*    cpu.regs.setBC(0x1234);*/
+/**/
+/*    cpu.memory[0] = 0xC5; // PUSH BC*/
+/*    cpu.regs.pc = 0;*/
+/*    cpu.step();*/
+/**/
+/*    REQUIRE(cpu.memory[0xFFFD] == 0x12);*/
+/*    REQUIRE(cpu.memory[0xFFFC] == 0x34);*/
+/**/
+/*    cpu.memory[1] = 0xC1; // POP BC*/
+/*    cpu.step();*/
+/**/
+/*    REQUIRE(cpu.regs.getBC() == 0x1234);*/
+/*}*/
