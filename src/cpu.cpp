@@ -12,20 +12,22 @@ uint8_t CPU::readReg8(Reg8 reg) {
         case REG_L: return regs.l; 
         case REG_A: return regs.a; 
         case REG_HL_MEM: return memory[regs.getHL()]; 
+        default: throw std::runtime_error("Invalid Reg8 access");
     }
     return 0;
 }
 
 void CPU::writeReg8(Reg8 reg, uint8_t value) {
     switch (reg) {
-        case REG_B: regs.b = value; 
-        case REG_C: regs.c = value; 
-        case REG_D: regs.d = value; 
-        case REG_E: regs.e = value; 
-        case REG_H: regs.h = value; 
-        case REG_L: regs.l = value; 
-        case REG_A: regs.a = value; 
-        case REG_HL_MEM: memory[regs.getHL()] = value; 
+        case REG_B: regs.b = value; break;
+        case REG_C: regs.c = value;  break;
+        case REG_D: regs.d = value;  break;
+        case REG_E: regs.e = value;  break;
+        case REG_H: regs.h = value;  break;
+        case REG_L: regs.l = value;  break;
+        case REG_A: regs.a = value;  break;
+        case REG_HL_MEM: memory[regs.getHL()] = value;  break;
+        default: throw std::runtime_error("Invalid Reg8 access");
     }
 }
 
@@ -35,6 +37,7 @@ uint16_t CPU::readReg16(Reg16 reg) {
         case REG_DE: return regs.getDE(); 
         case REG_HL: return regs.getHL(); 
         case REG_SP: return regs.sp; 
+        default: throw std::runtime_error("Invalid Reg16 access");
     }
     return 0;
 }
@@ -45,25 +48,28 @@ uint8_t CPU::readReg16Mem(Reg16 reg) {
         case REG_DE: return memory[regs.getDE()]; 
         case REG_HL: return memory[regs.getHL()]; 
         case REG_SP: return memory[regs.sp]; 
+        default: throw std::runtime_error("Invalid Reg16 access");
     }
     return 0;
 }
 
 void CPU::writeReg16(Reg16 reg, uint16_t value) {
     switch (reg) {
-        case REG_BC: regs.setBC(value); 
-        case REG_DE: regs.setDE(value); 
-        case REG_HL: regs.setHL(value); 
-        case REG_SP: regs.sp = value; 
+        case REG_BC: regs.setBC(value);  break;
+        case REG_DE: regs.setDE(value);  break;
+        case REG_HL: regs.setHL(value);  break;
+        case REG_SP: regs.sp = value;  break;
+        default: throw std::runtime_error("Invalid Reg16 access");
     }
 }
 
 void CPU::writeReg16Mem(Reg16 reg, uint8_t value) {
     switch (reg) {
-        case REG_BC: memory[regs.getBC()] = value; 
-        case REG_DE: memory[regs.getDE()] = value; 
-        case REG_HL: memory[regs.getHL()] = value; 
-        case REG_SP: memory[regs.sp] = value; 
+        case REG_BC: memory[regs.getBC()] = value;  break;
+        case REG_DE: memory[regs.getDE()] = value;  break;
+        case REG_HL: memory[regs.getHL()] = value;  break;
+        case REG_SP: memory[regs.sp] = value;  break;
+        default: throw std::runtime_error("Invalid Reg16 access");
     }
 }
 
