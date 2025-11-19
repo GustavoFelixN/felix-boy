@@ -44,7 +44,7 @@ public:
     uint16_t fetch16();
 
     void execute(uint8_t opcode);
-    void executeNext();
+    void step();
     void runTillNOP(bool showRegisters = true, bool showMem=true);
 
     void showMemory(uint16_t window = 5);
@@ -83,4 +83,7 @@ public:
     void POP(Reg16 dest);
 
     void LD_hl_sp_e();
+
+
+    //--- Arithimetic and logical intructions ---//
 };

@@ -87,7 +87,7 @@ void CPU::execute(uint8_t opcode) {
     OPCODE_TABLE[opcode](*this, opcode);
 }
 
-void CPU::executeNext() {
+void CPU::step() {
     uint8_t opcode = fetch();
     execute(opcode);
 }
