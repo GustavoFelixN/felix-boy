@@ -431,6 +431,7 @@ TEST_CASE("Opcode: LDH instructions", "[opcode][ldh]") {
     initOpcodes();
     CPU cpu;
 
+    cpu.regs.pc = 0;
     cpu.regs.c = 0x20;
     cpu.memory[0xFF20] = 0x55;
 
@@ -477,22 +478,22 @@ TEST_CASE("Opcode: LD HL, SP+e (0xF8)", "[opcode][ld][sp]") {
     REQUIRE(cpu.regs.getFlag(Registers::C) == true);
 }
 
-/*TEST_CASE("Opcode: PUSH/POP BC", "[opcode][stack]") {*/
-/*    initOpcodes();*/
-/*    CPU cpu;*/
-/**/
-/*    cpu.regs.sp = 0xFFFE;*/
-/*    cpu.regs.setBC(0x1234);*/
-/**/
-/*    cpu.memory[0] = 0xC5; // PUSH BC*/
-/*    cpu.regs.pc = 0;*/
-/*    cpu.step();*/
-/**/
-/*    REQUIRE(cpu.memory[0xFFFD] == 0x12);*/
-/*    REQUIRE(cpu.memory[0xFFFC] == 0x34);*/
-/**/
-/*    cpu.memory[1] = 0xC1; // POP BC*/
-/*    cpu.step();*/
-/**/
-/*    REQUIRE(cpu.regs.getBC() == 0x1234);*/
-/*}*/
+TEST_CASE("Opcode: PUSH/POP BC", "[opcode][stack]") {
+    initOpcodes();
+    CPU cpu;
+
+    cpu.regs.sp = 0xFFFE;
+    cpu.regs.setBC(0x1234);
+
+    cpu.memory[0] = 0xC5; // PUSH BC
+    cpu.regs.pc = 0;
+    cpu.step();
+
+    REQUIRE(cpu.memory[0xFFFD] == 0x12);
+    REQUIRE(cpu.memory[0xFFFC] == 0x34);
+
+    cpu.memory[1] = 0xC1; // POP BC
+    cpu.step();
+
+    REQUIRE(cpu.regs.getBC() == 0x1234);
+}

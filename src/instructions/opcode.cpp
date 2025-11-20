@@ -39,6 +39,16 @@ void initOpcodes() {
 
     OPCODE_TABLE[0xF8] = instr::LD_hl_sp_e;
 
+    for(uint8_t op =  0x0C; op <= 0x0F; op++) {
+        uint8_t popOP  = (op << 4) | 0x01;
+        uint8_t pushOP = (op << 4) | 0x05;
+
+        OPCODE_TABLE[popOP] = instr::POP;
+        OPCODE_TABLE[pushOP] = instr::PUSH;
+    }
+
+
+
     OPCODE_TABLE[0x00] = instr::NOP;
     OPCODE_TABLE[0x10] = instr::STOP;
     OPCODE_TABLE[0x76] = instr::HALT;
